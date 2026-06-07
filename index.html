@@ -1,0 +1,998 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#FF6B5C">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="UmamiGo">
+<meta name="description" content="UmamiGo — Asian food delivery">
+<link rel="manifest" href="data:application/json;base64,eyJuYW1lIjoiVW1hbWlHbyIsInNob3J0X25hbWUiOiJVbWFtaUdvIiwic3RhcnRfdXJsIjoiLiIsImRpc3BsYXkiOiJzdGFuZGFsb25lIiwiYmFja2dyb3VuZF9jb2xvciI6IiNGRjZCNUMiLCJ0aGVtZV9jb2xvciI6IiNGRjZCNUMiLCJpY29ucyI6W3sic3JjIjoiZGF0YTppbWFnZS9zdmcreG1sLGJhc2U2NCxQSE4yWnlCNGJXeHVjejBpYUhSMGNEb3ZMM2QzZHk1M015NXZjbWN2TWpBd01DOXpkbWNpSUhacFpYZENiM2c5SWpBZ01DQXhNREFnTVRBd0lqNDhjbVZqZENCM2FXUjBhRDBpTVRBd0lpQm9aV2xuYUhROUlqRXdNQ0lnY25nOUlqSXdJaUJtYVd4c1BTSWpSa1kyUWpWRElpOCtQSFJsZUhRZ2VEMGlOVEFpSUhrOUlqWXdJaUJtYjI1MExYTnBlbVU5SWpVd0lpQjBaWGgwTFdGdVkyaHZjajBpYldsa1pHeGxJaUJtYVd4c1BTSjNhR2wwWlNJK0Zqd3ZkR1Y0ZD09Iiwic2l6ZXMiOiIxOTJ4MTkyIiwidHlwZSI6ImltYWdlL3N2Zyt4bWwifV19">
+<title>UmamiGo</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700;9..144,900&family=Manrope:wght@400;500;600;700;800&display=swap');
+
+  :root{
+    --coral:#FF6B5C; --coral-dark:#E8503F; --navy:#2B2D5B; --navy-deep:#1E2047;
+    --green:#34C759; --orange:#FF8A3D; --ink:#1A1A2E; --muted:#8A8AA0;
+    --line:#EDEDF2; --bg:#F6F6FA; --white:#FFFFFF;
+    --display:'Fraunces',Georgia,serif; --body:'Manrope',system-ui,sans-serif;
+    --shadow-sm:0 2px 8px rgba(30,32,71,.08);
+    --shadow:0 8px 28px rgba(30,32,71,.14);
+    --shadow-lg:0 18px 50px rgba(30,32,71,.22);
+  }
+  *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;-webkit-user-select:none;user-select:none;}
+  html,body{height:100%;}
+  body{
+    font-family:var(--body);
+    background:
+      radial-gradient(900px 500px at 12% -8%, rgba(255,107,92,.16), transparent 60%),
+      radial-gradient(800px 500px at 100% 110%, rgba(43,45,91,.14), transparent 55%),
+      #ECECF4;
+    color:var(--ink);
+    display:flex;align-items:center;justify-content:center;
+    min-height:100dvh;overflow:hidden;-webkit-font-smoothing:antialiased;padding:12px;
+  }
+
+  /* Phone shell — scales to fit any viewport, never chopped */
+  .stage{ display:flex;align-items:center;justify-content:center;width:100%;height:100dvh; }
+  .phone{
+    position:relative;width:390px;height:844px;background:#0a0a0f;
+    border-radius:56px;padding:12px;
+    box-shadow:var(--shadow-lg), 0 0 0 2px rgba(255,255,255,.06) inset;
+    flex:none;transform-origin:center center;
+  }
+  .screen-host{position:relative;width:100%;height:100%;background:var(--bg);
+    border-radius:44px;overflow:hidden;}
+  .notch{position:absolute;top:14px;left:50%;transform:translateX(-50%);
+    width:120px;height:32px;background:#0a0a0f;border-radius:20px;z-index:9999;}
+
+  /* On phones, fill the real screen instead of showing a fake phone frame */
+  @media (max-width:480px){
+    body{padding:0;}
+    .phone{width:100vw;height:100dvh;border-radius:0;padding:0;box-shadow:none;background:var(--bg);}
+    .screen-host{border-radius:0;}
+    .notch{display:none;}
+  }
+
+  /* Screen base */
+  .screen{position:absolute;inset:0;display:none;flex-direction:column;
+    opacity:0;transform:translateX(26px);transition:opacity .32s ease, transform .32s ease;overflow:hidden;}
+  .screen.active{display:flex;opacity:1;transform:translateX(0);z-index:5;}
+  .screen.leaving{display:flex;opacity:0;transform:translateX(-26px);z-index:4;pointer-events:none;}
+  .scroll{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;}
+  .scroll::-webkit-scrollbar{display:none;}
+
+  /* Status bar — proper top spacing so nothing bunches at the notch */
+  .statusbar{height:54px;flex:none;display:flex;align-items:center;justify-content:space-between;
+    padding:14px 30px 0;font-size:15px;font-weight:700;color:var(--ink);z-index:50;position:relative;}
+  .statusbar.light{color:#fff;}
+  .statusbar .right{display:flex;gap:7px;align-items:center;font-size:13px;}
+  .statusbar .bars{display:flex;gap:2px;align-items:flex-end;height:11px;}
+  .statusbar .bars i{width:3px;background:currentColor;border-radius:1px;}
+  .statusbar .bars i:nth-child(1){height:4px;} .statusbar .bars i:nth-child(2){height:6px;}
+  .statusbar .bars i:nth-child(3){height:8px;} .statusbar .bars i:nth-child(4){height:11px;}
+  .statusbar .batt{width:24px;height:12px;border:1.5px solid currentColor;border-radius:3px;position:relative;}
+  .statusbar .batt::after{content:"";position:absolute;right:-3px;top:3px;width:2px;height:6px;background:currentColor;border-radius:0 2px 2px 0;}
+  .statusbar .batt i{position:absolute;inset:1.5px;background:currentColor;border-radius:1px;}
+
+  /* ===== MAP ===== */
+  .map{position:absolute;inset:0;background:#e9eef3;}
+  .map svg{width:100%;height:100%;display:block;}
+  .map .road{stroke:#fff;stroke-linecap:round;fill:none;}
+  .map .road.big{stroke-width:9;} .map .road.med{stroke-width:5;} .map .road.sm{stroke-width:2.5;stroke:#f4f6f8;}
+  .map .block{fill:#dfe6ec;} .map .park{fill:#cfe8d4;} .map .water{fill:#bcd9ec;}
+  .map-label{font-family:var(--body);font-size:11px;fill:#9aa3ad;font-weight:600;}
+
+  .pin{position:absolute;transform:translate(-50%,-100%);z-index:8;cursor:pointer;
+    filter:drop-shadow(0 6px 8px rgba(232,80,63,.4));transition:transform .15s, opacity .25s;}
+  .pin:active{transform:translate(-50%,-100%) scale(.86);}
+  .pin svg{width:36px;height:44px;display:block;}
+  .pin.dim{opacity:.28;filter:grayscale(.6) drop-shadow(0 4px 5px rgba(0,0,0,.15));}
+  .pin.home{filter:drop-shadow(0 5px 7px rgba(0,0,0,.25));}
+  .pin.home svg{width:40px;height:40px;}
+
+  /* ===== Home top bar ===== */
+  .home-top{position:absolute;top:54px;left:0;right:0;z-index:30;padding:8px 16px 0;}
+  .brand{display:flex;align-items:center;gap:8px;margin:2px 4px 14px;}
+  .brand .logo{width:32px;height:32px;border-radius:10px;background:var(--coral);
+    display:grid;place-items:center;font-size:18px;box-shadow:var(--shadow-sm);}
+  .brand b{font-family:var(--display);font-size:22px;font-weight:900;letter-spacing:-.5px;}
+  .brand b span{color:var(--coral);}
+  .searchbar{display:flex;align-items:center;gap:10px;background:#fff;border-radius:18px;
+    padding:14px 14px;box-shadow:var(--shadow);}
+  .searchbar .mag{color:var(--coral);font-size:17px;flex:none;}
+  .searchbar input{border:none;outline:none;flex:1;font-family:var(--body);font-size:15px;
+    font-weight:500;color:var(--ink);background:transparent;cursor:pointer;}
+  .searchbar input::placeholder{color:var(--muted);}
+  .mic-fab{width:44px;height:44px;border-radius:14px;background:var(--coral);border:none;
+    display:grid;place-items:center;flex:none;box-shadow:0 4px 12px rgba(232,80,63,.45);cursor:pointer;transition:transform .12s;}
+  .mic-fab:active{transform:scale(.9);}
+  .mic-fab svg{width:20px;height:20px;}
+  .chips{display:flex;gap:9px;margin-top:14px;overflow-x:auto;padding:2px 2px 6px;}
+  .chips::-webkit-scrollbar{display:none;}
+  .chip{flex:none;display:flex;align-items:center;gap:6px;background:#fff;border:1.5px solid transparent;
+    border-radius:999px;padding:10px 16px;font-size:13px;font-weight:700;color:var(--ink);
+    box-shadow:var(--shadow-sm);cursor:pointer;position:relative;transition:all .18s;white-space:nowrap;}
+  .chip:active{transform:scale(.94);}
+  .chip.active{background:var(--coral);color:#fff;border-color:var(--coral);box-shadow:0 4px 14px rgba(232,80,63,.4);}
+  .chip .dot{position:absolute;top:-3px;right:-3px;width:11px;height:11px;border-radius:50%;
+    background:#fff;border:2px solid var(--coral);display:none;}
+  .chip.active .dot{display:block;}
+
+  /* ===== Bottom sheet ===== */
+  .sheet{position:absolute;left:0;right:0;bottom:0;z-index:25;background:#fff;
+    border-radius:26px 26px 0 0;box-shadow:0 -10px 40px rgba(30,32,71,.18);
+    padding:10px 16px calc(20px + env(safe-area-inset-bottom));}
+  .sheet .handle{width:42px;height:5px;border-radius:3px;background:#dadae4;margin:2px auto 12px;}
+  .sheet h3{font-size:14px;font-weight:800;margin:0 4px 11px;color:var(--ink);display:flex;justify-content:space-between;}
+  .sheet h3 .count{color:var(--coral);font-weight:700;}
+  #sheetCards{transition:opacity .2s;}
+  .rcard{display:flex;gap:13px;align-items:center;padding:11px;border-radius:18px;background:var(--bg);
+    margin-bottom:10px;cursor:pointer;transition:transform .14s, background .14s;}
+  .rcard:active{transform:scale(.98);background:#eef0f6;}
+  .rcard .thumb{width:58px;height:58px;border-radius:15px;flex:none;display:grid;place-items:center;
+    font-size:28px;background:linear-gradient(135deg,#fff,#f0f0f6);box-shadow:var(--shadow-sm);}
+  .rcard .info{flex:1;min-width:0;}
+  .rcard .info .name{font-weight:800;font-size:15px;display:flex;align-items:center;gap:6px;}
+  .rcard .info .meta{font-size:12.5px;color:var(--muted);margin-top:3px;display:flex;gap:12px;font-weight:600;}
+  .rcard .info .meta .star{color:#F5A623;}
+  .rcard .chev{color:var(--muted);font-size:20px;}
+  .sheet-empty{text-align:center;color:var(--muted);font-size:13px;font-weight:600;padding:18px 0;}
+
+  /* ===== Voice ===== */
+  #voice{background:linear-gradient(160deg,#3a3d7a,#2B2D5B 60%,#1E2047);}
+  .voice-wrap{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;position:relative;padding:0 30px;}
+  .voice-back{position:absolute;top:14px;left:18px;background:rgba(255,255,255,.14);border:none;color:#fff;
+    border-radius:14px;padding:10px 16px;font-family:var(--body);font-weight:700;font-size:14px;
+    display:flex;align-items:center;gap:6px;cursor:pointer;}
+  .voice-back:active{background:rgba(255,255,255,.26);}
+  .mic-stage{position:relative;width:230px;height:230px;display:grid;place-items:center;}
+  .ring{position:absolute;border-radius:50%;border:2px solid #fff;}
+  .ring.r1{width:200px;height:200px;opacity:.20;animation:pulse 2s ease-out infinite;}
+  .ring.r2{width:150px;height:150px;opacity:.10;animation:pulse 2s ease-out infinite .4s;}
+  @keyframes pulse{0%{transform:scale(.85);opacity:.3;}100%{transform:scale(1.25);opacity:0;}}
+  .mic-big{width:108px;height:108px;border-radius:50%;background:#fff;display:grid;place-items:center;
+    box-shadow:0 12px 40px rgba(0,0,0,.35);cursor:pointer;z-index:2;transition:transform .15s;}
+  .mic-big:active{transform:scale(.93);}
+  .mic-big.listening{animation:micpulse 1s ease-in-out infinite;}
+  @keyframes micpulse{0%,100%{box-shadow:0 12px 40px rgba(0,0,0,.35);}50%{box-shadow:0 12px 50px rgba(255,107,92,.7);}}
+  .mic-big svg{width:46px;height:46px;}
+  .ghost-hint{margin-top:34px;color:rgba(255,255,255,.62);font-style:italic;font-size:15px;text-align:center;font-weight:500;min-height:24px;padding:0 20px;}
+  .heard{margin-top:8px;color:#fff;font-weight:700;font-size:18px;text-align:center;min-height:26px;}
+  .waves{position:absolute;bottom:80px;display:flex;gap:5px;align-items:center;height:46px;}
+  .waves span{width:5px;border-radius:3px;background:#fff;opacity:.85;height:10px;}
+  .waves.on span{animation:wave .7s ease-in-out infinite;}
+  .waves span:nth-child(1){animation-delay:0s;}.waves span:nth-child(2){animation-delay:.1s;}
+  .waves span:nth-child(3){animation-delay:.2s;}.waves span:nth-child(4){animation-delay:.3s;}
+  .waves span:nth-child(5){animation-delay:.4s;}.waves span:nth-child(6){animation-delay:.25s;}
+  .waves span:nth-child(7){animation-delay:.15s;}
+  @keyframes wave{0%,100%{height:10px;}50%{height:40px;}}
+
+  /* ===== Restaurant Profile ===== */
+  .topnav{display:flex;align-items:center;gap:12px;padding:6px 16px 12px;flex:none;position:relative;z-index:20;}
+  .iconbtn{width:42px;height:42px;border-radius:13px;background:#fff;border:none;display:grid;place-items:center;
+    box-shadow:var(--shadow-sm);cursor:pointer;flex:none;font-size:18px;color:var(--ink);}
+  .iconbtn:active{transform:scale(.9);}
+  .topnav .title{font-weight:800;font-size:17px;flex:1;}
+  .topnav .rate{color:var(--muted);font-weight:700;font-size:14px;display:flex;align-items:center;gap:4px;}
+  .topnav .rate .star{color:#F5A623;}
+  .hero{height:185px;margin:0 16px;border-radius:22px;position:relative;overflow:hidden;
+    background:linear-gradient(135deg,#9ec9ff,#7eb3f5);display:grid;place-items:center;box-shadow:var(--shadow);}
+  .hero .pattern{position:absolute;inset:0;opacity:.45;
+    background-image:radial-gradient(circle at 50% 100%, transparent 58%, #ffffff 60%);background-size:30px 15px;}
+  .hero .emoji{font-size:76px;z-index:2;filter:drop-shadow(0 6px 10px rgba(0,0,0,.2));}
+  .rdetail{padding:18px 22px 0;}
+  .rdetail h1{font-family:var(--display);font-size:30px;font-weight:900;letter-spacing:-.5px;}
+  .rdetail .sub{display:flex;align-items:center;gap:14px;color:var(--muted);font-weight:700;font-size:13.5px;margin-top:7px;flex-wrap:wrap;}
+  .rdetail .sub .star{color:#F5A623;}
+  .callout{margin:18px 22px 0;background:#eef2fd;border-left:5px solid var(--coral);border-radius:0 16px 16px 0;
+    padding:15px 16px;font-size:14px;line-height:1.55;color:#3b3d63;font-weight:500;box-shadow:var(--shadow-sm);}
+  .menu-h{font-weight:800;font-size:13px;letter-spacing:1.5px;color:var(--coral);margin:24px 22px 10px;}
+  .dishrow{display:flex;align-items:center;gap:14px;margin:0 22px 12px;padding:11px 12px;border-radius:18px;
+    background:#fff;box-shadow:var(--shadow-sm);cursor:pointer;transition:transform .14s;}
+  .dishrow:active{transform:scale(.98);}
+  .dishrow .demoji{width:54px;height:54px;border-radius:14px;background:var(--bg);display:grid;place-items:center;font-size:30px;flex:none;}
+  .dishrow .dinfo{flex:1;}
+  .dishrow .dinfo .dn{font-weight:800;font-size:15px;}
+  .dishrow .dinfo .do{font-size:12px;color:var(--muted);font-weight:600;margin-top:2px;}
+  .dishrow .price{font-weight:900;color:var(--coral);font-size:17px;}
+
+  /* ===== Dish customise ===== */
+  .dish-hero{height:200px;margin:0 16px;border-radius:22px;overflow:hidden;position:relative;
+    background:linear-gradient(135deg,#c98a5e,#9c5a3c);display:grid;place-items:center;box-shadow:var(--shadow);}
+  .dish-hero .emoji{font-size:88px;filter:drop-shadow(0 8px 14px rgba(0,0,0,.3));}
+  .dish-body{padding:18px 22px 0;}
+  .dish-body h1{font-family:var(--display);font-size:27px;font-weight:900;}
+  .dish-body .origin{color:var(--muted);font-weight:700;font-size:13.5px;margin-top:5px;}
+  .sect-label{display:flex;align-items:center;gap:8px;font-weight:800;font-size:13px;letter-spacing:1.2px;color:var(--coral);margin:24px 0 14px;}
+  .spice-track{height:14px;border-radius:8px;position:relative;cursor:pointer;
+    background:linear-gradient(90deg,#7ED957,#F5C542 50%,#FF4D4D);box-shadow:inset 0 1px 3px rgba(0,0,0,.18);touch-action:none;}
+  .spice-thumb{position:absolute;top:50%;width:30px;height:30px;border-radius:50%;background:#fff;border:3px solid var(--coral);
+    transform:translate(-50%,-50%);box-shadow:var(--shadow);left:0%;transition:left .08s;}
+  .spice-val{text-align:center;margin-top:16px;font-weight:800;font-size:14px;color:var(--ink);}
+  .qty-row{display:flex;align-items:center;gap:22px;margin-top:8px;}
+  .qbtn{width:52px;height:52px;border-radius:16px;background:var(--bg);border:none;font-size:26px;font-weight:700;
+    color:var(--ink);display:grid;place-items:center;cursor:pointer;box-shadow:var(--shadow-sm);transition:transform .12s;}
+  .qbtn:active{transform:scale(.88);background:#e7e7f0;}
+  .qty-num{font-size:24px;font-weight:800;min-width:30px;text-align:center;}
+  .extras{font-size:13px;color:var(--muted);font-weight:600;margin-top:20px;}
+  .addcart-zone{flex:none;padding:14px 16px calc(14px + env(safe-area-inset-bottom));background:#fff;box-shadow:0 -8px 24px rgba(30,32,71,.08);}
+  .addcart{width:100%;height:56px;border:none;border-radius:18px;background:var(--coral);color:#fff;font-family:var(--body);
+    font-weight:800;font-size:17px;display:flex;align-items:center;justify-content:center;gap:10px;cursor:pointer;
+    box-shadow:0 8px 22px rgba(232,80,63,.45);transition:transform .12s;}
+  .addcart:active{transform:scale(.97);}
+
+  /* ===== Order confirmed ===== */
+  #confirm .cityband{height:150px;flex:none;position:relative;overflow:hidden;
+    background:linear-gradient(135deg,#5b1a6b,#a01f6e 55%,#d6246a);}
+  #confirm .cityband::after{content:"";position:absolute;inset:0;
+    background:repeating-linear-gradient(90deg,transparent 0 22px,rgba(255,255,255,.06) 22px 24px),
+    repeating-linear-gradient(transparent 0 30px,rgba(255,210,120,.10) 30px 32px);}
+  .confirm-body{flex:1;padding:0 24px 24px;margin-top:-58px;position:relative;z-index:2;display:flex;flex-direction:column;align-items:center;overflow-y:auto;}
+  .confirm-body::-webkit-scrollbar{display:none;}
+  .check{width:104px;height:104px;border-radius:50%;background:#fff;display:grid;place-items:center;box-shadow:var(--shadow);}
+  .check .badge{width:74px;height:74px;border-radius:22px;background:linear-gradient(135deg,#5FD97B,#34C759);
+    display:grid;place-items:center;box-shadow:0 6px 16px rgba(52,199,89,.4);animation:pop .5s cubic-bezier(.2,1.4,.4,1);}
+  @keyframes pop{0%{transform:scale(0);}100%{transform:scale(1);}}
+  .check .badge svg{width:38px;height:38px;}
+  .confirm-body h1{font-family:var(--display);font-size:30px;font-weight:900;margin-top:18px;}
+  .confirm-body .msg{text-align:center;color:var(--coral);font-weight:700;font-size:14.5px;margin-top:8px;line-height:1.5;}
+  .summary{width:100%;background:#fff;border-radius:20px;padding:18px 20px;margin-top:22px;box-shadow:var(--shadow-sm);}
+  .summary .line{display:flex;justify-content:space-between;font-size:14.5px;font-weight:600;color:#444;padding:6px 0;}
+  .summary .div{height:1px;background:var(--line);margin:8px 0;}
+  .summary .total{display:flex;justify-content:space-between;font-weight:900;font-size:18px;color:var(--ink);}
+  .haptic-badge{margin-top:18px;background:#eef2fd;border:1.5px solid #c9d2f5;color:var(--navy);border-radius:12px;
+    padding:9px 18px;font-size:13px;font-weight:700;display:flex;align-items:center;gap:8px;}
+  .cta-stack{width:100%;margin-top:18px;display:flex;flex-direction:column;gap:11px;}
+  .cta{width:100%;height:54px;border-radius:17px;font-family:var(--body);font-weight:800;font-size:16px;cursor:pointer;
+    border:none;display:flex;align-items:center;justify-content:center;gap:8px;transition:transform .12s;}
+  .cta:active{transform:scale(.97);}
+  .cta.primary{background:var(--navy);color:#fff;box-shadow:0 8px 20px rgba(43,45,91,.35);}
+  .cta.secondary{background:#fff;color:var(--navy);border:2px solid var(--navy);}
+  .stars-row{display:flex;gap:6px;justify-content:center;margin-top:14px;}
+  .stars-row .s{font-size:32px;cursor:pointer;filter:grayscale(1) opacity(.4);transition:transform .15s, filter .15s;}
+  .stars-row .s.lit{filter:none;}
+  .stars-row .s:active{transform:scale(1.25);}
+
+  /* ===== Live tracking ===== */
+  .eta-box{position:absolute;top:62px;right:16px;z-index:30;background:var(--navy);color:#fff;border-radius:16px;
+    padding:11px 18px;text-align:center;box-shadow:var(--shadow);}
+  .eta-box .lbl{font-size:11px;font-weight:700;letter-spacing:1px;opacity:.7;}
+  .eta-box .val{font-size:22px;font-weight:900;font-family:var(--display);}
+  .rider{position:absolute;z-index:12;transform:translate(-50%,-50%);transition:left 2s linear, top 2s linear;}
+  .rider .bubble{width:44px;height:44px;border-radius:50%;background:var(--coral);display:grid;place-items:center;
+    font-size:22px;box-shadow:0 6px 14px rgba(232,80,63,.5);border:3px solid #fff;}
+  .progress-panel{flex:none;background:#fff;border-radius:24px 24px 0 0;
+    padding:20px 22px calc(22px + env(safe-area-inset-bottom));box-shadow:0 -10px 30px rgba(30,32,71,.16);position:relative;z-index:20;}
+  .pbar{display:flex;align-items:flex-start;justify-content:space-between;position:relative;margin:6px 6px 0;}
+  .pbar .track{position:absolute;top:13px;left:14px;right:14px;height:4px;background:var(--line);border-radius:3px;}
+  .pbar .fill{position:absolute;top:13px;left:14px;height:4px;background:var(--coral);border-radius:3px;width:0;transition:width 1s ease;}
+  .pstage{display:flex;flex-direction:column;align-items:center;gap:9px;z-index:2;flex:1;}
+  .pstage .node{width:26px;height:26px;border-radius:50%;background:#fff;border:3px solid var(--line);display:grid;place-items:center;transition:all .4s;}
+  .pstage.done .node{background:var(--coral);border-color:var(--coral);}
+  .pstage.active .node{border-color:var(--coral);box-shadow:0 0 0 5px rgba(255,107,92,.2);}
+  .pstage .node .dot{width:9px;height:9px;border-radius:50%;background:#fff;opacity:0;}
+  .pstage.done .node .dot{opacity:1;}
+  .pstage label{font-size:11.5px;font-weight:700;color:var(--muted);text-align:center;}
+  .pstage.active label{color:var(--coral);} .pstage.done label{color:var(--ink);}
+  .route{position:absolute;inset:0;z-index:6;pointer-events:none;}
+
+  /* ===== Arrival ===== */
+  #arrival{background:radial-gradient(circle at 50% 35%,#FF7A4D,#FF5A3C 70%);}
+  .arrival-wrap{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:0 30px;}
+  .bell{font-size:96px;animation:ring 1s ease-in-out infinite;filter:drop-shadow(0 8px 18px rgba(0,0,0,.25));}
+  @keyframes ring{0%,100%{transform:rotate(0);}20%{transform:rotate(16deg);}40%{transform:rotate(-13deg);}60%{transform:rotate(8deg);}80%{transform:rotate(-5deg);}}
+  .buzz-line{height:3px;width:60px;background:rgba(255,255,255,.6);border-radius:3px;margin:8px 0;animation:buzzgrow .9s ease-in-out infinite alternate;}
+  @keyframes buzzgrow{from{width:60px;}to{width:200px;}}
+  .arrival-wrap h1{font-family:var(--display);font-size:38px;font-weight:900;color:#fff;text-align:center;line-height:1.1;margin:14px 0;letter-spacing:-.5px;}
+  .vibe-badge{background:rgba(0,0,0,.28);color:#fff;border-radius:999px;padding:9px 20px;font-size:13px;font-weight:700;display:flex;align-items:center;gap:8px;margin-top:10px;}
+  .arrival-cta{margin-top:30px;background:#fff;color:var(--coral);border:none;border-radius:17px;padding:16px 36px;font-family:var(--body);font-weight:800;font-size:16px;cursor:pointer;box-shadow:var(--shadow);}
+  .arrival-cta:active{transform:scale(.96);}
+
+  /* ===== Buzz overlay (cross-platform haptic substitute) ===== */
+  #buzz{position:absolute;inset:0;z-index:8000;pointer-events:none;opacity:0;}
+  #buzz.go{animation:buzzflash .42s ease-out;}
+  @keyframes buzzflash{0%{opacity:0;}15%{opacity:1;box-shadow:inset 0 0 0 6px rgba(255,107,92,.55);}100%{opacity:0;box-shadow:inset 0 0 0 0 rgba(255,107,92,0);}}
+  .phone.shake{animation:shake .4s cubic-bezier(.36,.07,.19,.97);}
+  @keyframes shake{10%,90%{transform:translateX(-1px);}20%,80%{transform:translateX(2px);}30%,50%,70%{transform:translateX(-4px);}40%,60%{transform:translateX(4px);}}
+
+  /* ===== Toast ===== */
+  .toast{position:absolute;bottom:34px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--navy);
+    color:#fff;padding:13px 22px;border-radius:14px;font-size:14px;font-weight:700;box-shadow:var(--shadow);opacity:0;
+    transition:all .3s;z-index:9000;pointer-events:none;white-space:nowrap;max-width:90%;}
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+
+  /* ===== Welcome ===== */
+  #welcome{background:linear-gradient(160deg,#FF7A6B,#E8503F 60%,#c8412f);z-index:200;}
+  .welcome-wrap{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:0 36px;text-align:center;}
+  .welcome-wrap .big{font-size:64px;margin-bottom:6px;}
+  .welcome-wrap h1{font-family:var(--display);font-size:46px;font-weight:900;color:#fff;letter-spacing:-1px;}
+  .welcome-wrap h1 span{display:block;font-size:17px;font-weight:600;letter-spacing:.5px;opacity:.9;margin-top:8px;font-family:var(--body);}
+  .welcome-wrap p{color:rgba(255,255,255,.85);font-size:14px;margin-top:20px;line-height:1.55;font-weight:500;}
+  .pid-input{margin-top:24px;width:100%;background:rgba(255,255,255,.16);border:1.5px solid rgba(255,255,255,.35);
+    border-radius:14px;padding:14px 16px;color:#fff;font-family:var(--body);font-size:15px;font-weight:600;text-align:center;outline:none;}
+  .pid-input::placeholder{color:rgba(255,255,255,.6);}
+  .welcome-cta{margin-top:16px;width:100%;background:#fff;color:var(--coral);border:none;border-radius:14px;
+    padding:16px;font-family:var(--body);font-weight:800;font-size:16px;cursor:pointer;box-shadow:var(--shadow);}
+  .welcome-cta:active{transform:scale(.97);}
+
+  /* ===== Facilitator logs ===== */
+  .log-toggle{position:fixed;bottom:14px;right:14px;z-index:99999;background:var(--navy);color:#fff;border:none;
+    border-radius:50%;width:50px;height:50px;font-size:20px;cursor:pointer;box-shadow:var(--shadow);}
+  .log-panel{position:fixed;inset:0;background:rgba(20,20,35,.97);z-index:99998;display:none;flex-direction:column;
+    padding:24px;color:#fff;font-family:var(--body);overflow-y:auto;}
+  .log-panel.show{display:flex;}
+  .log-panel h2{font-family:var(--display);font-size:26px;margin-bottom:4px;}
+  .log-panel .subt{color:#aaa;font-size:13px;margin-bottom:18px;}
+  .log-panel .row{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:18px;}
+  .log-panel button{background:var(--coral);color:#fff;border:none;border-radius:10px;padding:11px 16px;font-family:var(--body);font-weight:700;font-size:13px;cursor:pointer;}
+  .log-panel button.ghost{background:rgba(255,255,255,.12);}
+  .log-panel table{width:100%;border-collapse:collapse;font-size:12px;margin-top:10px;}
+  .log-panel th,.log-panel td{text-align:left;padding:7px 8px;border-bottom:1px solid rgba(255,255,255,.12);}
+  .log-panel th{color:var(--coral);font-size:11px;letter-spacing:.5px;text-transform:uppercase;}
+  .log-panel .statgrid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:14px 0;}
+  .log-panel .statcard{background:rgba(255,255,255,.08);border-radius:12px;padding:14px;}
+  .log-panel .statcard .k{font-size:11px;color:#aaa;text-transform:uppercase;letter-spacing:.5px;}
+  .log-panel .statcard .v{font-size:24px;font-weight:800;font-family:var(--display);margin-top:4px;}
+  .log-panel .closebtn{position:absolute;top:18px;right:18px;background:rgba(255,255,255,.12);width:40px;height:40px;border-radius:50%;font-size:18px;}
+</style>
+</head>
+<body>
+<div class="stage" id="stage">
+<div class="phone" id="phone">
+  <div class="notch"></div>
+  <div class="screen-host" id="host">
+
+    <!-- WELCOME -->
+    <section class="screen active" id="welcome">
+      <div class="welcome-wrap">
+        <div class="big">🍜</div>
+        <h1>UmamiGo<span>Asian food, delivered</span></h1>
+        <p>Functional prototype — Interactive Multimedia Applications, ISEL 2025/2026.<br>Enter a participant ID to begin a logged session.</p>
+        <input class="pid-input" id="pidInput" placeholder="e.g. P1" maxlength="12" autocomplete="off">
+        <button class="welcome-cta" onclick="startSession()">Start →</button>
+      </div>
+    </section>
+
+    <!-- A — HOME MAP -->
+    <section class="screen" id="home">
+      <div class="statusbar light">
+        <span class="clk">9:41</span>
+        <div class="right"><span class="bars"><i></i><i></i><i></i><i></i></span><span>5G</span><span class="batt"><i></i></span></div>
+      </div>
+      <div class="map">
+        <svg viewBox="0 0 390 844" preserveAspectRatio="xMidYMid slice">
+          <rect width="390" height="844" fill="#e9eef3"/>
+          <rect class="block" x="20" y="120" width="120" height="90" rx="6"/>
+          <rect class="block" x="250" y="100" width="120" height="110" rx="6"/>
+          <rect class="park" x="30" y="560" width="140" height="120" rx="10"/>
+          <rect class="block" x="240" y="540" width="130" height="100" rx="6"/>
+          <rect class="block" x="60" y="330" width="90" height="80" rx="6"/>
+          <rect class="block" x="250" y="340" width="110" height="70" rx="6"/>
+          <path class="road big" d="M-10 250 L400 230"/>
+          <path class="road big" d="M-10 470 L400 500"/>
+          <path class="road med" d="M180 0 L200 844"/>
+          <path class="road med" d="M60 100 L80 800"/>
+          <path class="road sm" d="M300 100 L320 800"/>
+          <path class="road sm" d="M-10 380 L400 360"/>
+          <text class="map-label" x="240" y="290">R. Pascoal de Melo</text>
+          <text class="map-label" x="250" y="312">SANTA CRUZ</text>
+          <text class="map-label" x="40" y="455">Marquês de Pombal</text>
+          <text class="map-label" x="220" y="430">Boshey sha</text>
+        </svg>
+      </div>
+      <div id="mapPins"></div>
+
+      <div class="home-top">
+        <div class="brand"><div class="logo">🍜</div><b>UMAMI<span>GO</span></b></div>
+        <div class="searchbar">
+          <span class="mag">🔍</span>
+          <input placeholder="Search for Asian food…" readonly onclick="openVoice()">
+          <button class="mic-fab" onclick="openVoice()" aria-label="Voice search">
+            <svg viewBox="0 0 24 24" fill="none"><rect x="9" y="3" width="6" height="11" rx="3" fill="#fff"/><path d="M6 11a6 6 0 0 0 12 0M12 17v4M8 21h8" stroke="#fff" stroke-width="2" stroke-linecap="round"/></svg>
+          </button>
+        </div>
+        <div class="chips" id="chips"></div>
+      </div>
+
+      <div class="sheet" id="sheet">
+        <div class="handle"></div>
+        <h3><span id="sheetTitle">Nearby restaurants</span><span class="count" id="sheetCount"></span></h3>
+        <div id="sheetCards"></div>
+      </div>
+    </section>
+
+    <!-- B — VOICE -->
+    <section class="screen" id="voice">
+      <div class="statusbar light"><span class="clk">9:41</span><div class="right"><span class="bars"><i></i><i></i><i></i><i></i></span><span>5G</span><span class="batt"><i></i></span></div></div>
+      <div class="voice-wrap">
+        <button class="voice-back" onclick="closeVoice()">‹ Back</button>
+        <div class="mic-stage">
+          <div class="ring r1"></div><div class="ring r2"></div>
+          <div class="mic-big" id="micBig" onclick="doVoice()">
+            <svg viewBox="0 0 24 24" fill="none"><rect x="9" y="3" width="6" height="11" rx="3" fill="#FF6B5C"/><path d="M6 11a6 6 0 0 0 12 0M12 17v4M8 21h8" stroke="#FF6B5C" stroke-width="2" stroke-linecap="round"/></svg>
+          </div>
+        </div>
+        <div class="heard" id="heard"></div>
+        <div class="ghost-hint" id="ghost">Tap the mic and say “spicy ramen near me”</div>
+        <div class="waves" id="waves"><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div>
+      </div>
+    </section>
+
+    <!-- C — RESTAURANT PROFILE -->
+    <section class="screen" id="restaurant">
+      <div class="statusbar"><span class="clk">9:41</span><div class="right"><span class="bars"><i></i><i></i><i></i><i></i></span><span>5G</span><span class="batt"><i></i></span></div></div>
+      <div class="scroll">
+        <div class="topnav">
+          <button class="iconbtn" onclick="back('home')">←</button>
+          <div class="title" id="rName">Sakura Ramen</div>
+          <div class="rate"><span id="rFlag">🇯🇵</span><span class="star">★</span><span id="rRate">4.8</span></div>
+        </div>
+        <div class="hero"><div class="pattern"></div><div class="emoji" id="rEmoji">🍜</div></div>
+        <div class="rdetail">
+          <h1 id="rName2">Sakura Ramen</h1>
+          <div class="sub"><span id="rLoc">🇯🇵 Osaka, Japan</span><span class="star">★ <span id="rRate2">4.8</span></span><span>🕒 12 min</span></div>
+        </div>
+        <div class="callout" id="rDesc"></div>
+        <div class="menu-h">MENU</div>
+        <div id="menuList"></div>
+        <div style="height:24px"></div>
+      </div>
+    </section>
+
+    <!-- D — DISH -->
+    <section class="screen" id="dish">
+      <div class="statusbar"><span class="clk">9:41</span><div class="right"><span class="bars"><i></i><i></i><i></i><i></i></span><span>5G</span><span class="batt"><i></i></span></div></div>
+      <div class="scroll">
+        <div class="topnav">
+          <button class="iconbtn" onclick="back('restaurant')">←</button>
+          <div class="title" id="dName">Tonkotsu Ramen</div>
+          <div class="rate"><span class="star">★</span><span id="dRate">4.8</span></div>
+        </div>
+        <div class="dish-hero"><div class="emoji" id="dEmoji">🍜</div></div>
+        <div class="dish-body">
+          <h1 id="dName2">Tonkotsu Ramen</h1>
+          <div class="origin" id="dOrigin">🇯🇵 Fukuoka, Japan — Rich pork broth</div>
+          <div class="sect-label">🌶️ SPICE LEVEL</div>
+          <div class="spice-track" id="spiceTrack"><div class="spice-thumb" id="spiceThumb"></div></div>
+          <div class="spice-val" id="spiceVal">Mild</div>
+          <div class="sect-label">QUANTITY</div>
+          <div class="qty-row">
+            <button class="qbtn" onclick="changeQty(-1)">−</button>
+            <span class="qty-num" id="qtyNum">1</span>
+            <button class="qbtn" onclick="changeQty(1)">+</button>
+          </div>
+          <div class="extras">＋ Extra toppings: Soft egg +1€</div>
+          <div style="height:24px"></div>
+        </div>
+      </div>
+      <div class="addcart-zone">
+        <button class="addcart" onclick="addToCart()">🛒 <span id="addLabel">Add to Cart · 12€</span></button>
+      </div>
+    </section>
+
+    <!-- E — CONFIRM -->
+    <section class="screen" id="confirm">
+      <div class="cityband"></div>
+      <div class="confirm-body">
+        <div class="check"><div class="badge"><svg viewBox="0 0 24 24" fill="none"><path d="M5 13l4 4 10-11" stroke="#fff" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/></svg></div></div>
+        <h1>Order Confirmed!</h1>
+        <div class="msg">Your food is being prepared<br><span id="cookLine">Sakura Ramen is cooking</span></div>
+        <div class="summary">
+          <div class="line"><span id="cItem">Tonkotsu Ramen ×1</span><span id="cItemP">12€</span></div>
+          <div class="line"><span>Delivery fee</span><span>1.99€</span></div>
+          <div class="div"></div>
+          <div class="total"><span>Total</span><span id="cTotal">13.99€</span></div>
+        </div>
+        <div class="haptic-badge">📳 Phone vibrated on confirm</div>
+        <div class="cta-stack">
+          <button class="cta primary" onclick="goTracking()">Track my order →</button>
+          <button class="cta secondary" onclick="toggleRate()">Rate this order</button>
+        </div>
+        <div class="stars-row" id="starsRow" style="display:none">
+          <span class="s" data-v="1" onclick="rate(1)">⭐</span>
+          <span class="s" data-v="2" onclick="rate(2)">⭐</span>
+          <span class="s" data-v="3" onclick="rate(3)">⭐</span>
+          <span class="s" data-v="4" onclick="rate(4)">⭐</span>
+          <span class="s" data-v="5" onclick="rate(5)">⭐</span>
+        </div>
+        <div style="height:20px"></div>
+      </div>
+    </section>
+
+    <!-- F — TRACKING -->
+    <section class="screen" id="tracking">
+      <div class="statusbar"><span class="clk">9:41</span><div class="right"><span class="bars"><i></i><i></i><i></i><i></i></span><span>5G</span><span class="batt"><i></i></span></div></div>
+      <div class="map">
+        <svg viewBox="0 0 390 844" preserveAspectRatio="xMidYMid slice">
+          <rect width="390" height="844" fill="#e9eef3"/>
+          <rect class="block" x="20" y="120" width="120" height="90" rx="6"/>
+          <rect class="block" x="250" y="100" width="120" height="110" rx="6"/>
+          <rect class="park" x="30" y="560" width="140" height="120" rx="10"/>
+          <rect class="block" x="240" y="540" width="130" height="100" rx="6"/>
+          <path class="road big" d="M-10 250 L400 230"/>
+          <path class="road big" d="M-10 470 L400 500"/>
+          <path class="road med" d="M180 0 L200 844"/>
+          <path class="road med" d="M60 100 L80 800"/>
+        </svg>
+      </div>
+      <svg class="route" viewBox="0 0 390 844" preserveAspectRatio="xMidYMid slice">
+        <path d="M70 250 Q140 360 175 430 T240 600" stroke="#FF6B5C" stroke-width="3.5" stroke-dasharray="9 8" fill="none" stroke-linecap="round"/>
+      </svg>
+      <div class="pin" style="left:18%;top:30%;">
+        <svg viewBox="0 0 36 44"><path fill="#FF6B5C" d="M18 0C8 0 1 7 1 17c0 12 17 27 17 27s17-15 17-27C35 7 28 0 18 0z"/><circle cx="18" cy="17" r="7" fill="#fff"/></svg>
+      </div>
+      <div class="pin home" style="left:62%;top:71%;">
+        <svg viewBox="0 0 40 40"><circle cx="20" cy="20" r="19" fill="#2B2D5B"/><path d="M12 20l8-7 8 7M14 19v8h12v-8" stroke="#fff" stroke-width="2.3" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </div>
+      <div class="rider" id="rider" style="left:18%;top:30%;"><div class="bubble">🛵</div></div>
+      <div class="eta-box"><div class="lbl">ETA</div><div class="val" id="etaVal">12 min</div></div>
+      <div style="flex:1"></div>
+      <div class="progress-panel">
+        <div class="pbar" id="pbar">
+          <div class="track"></div><div class="fill" id="pfill"></div>
+          <div class="pstage" data-s="0"><div class="node"><div class="dot"></div></div><label>Confirmed</label></div>
+          <div class="pstage" data-s="1"><div class="node"><div class="dot"></div></div><label>Cooking</label></div>
+          <div class="pstage" data-s="2"><div class="node"><div class="dot"></div></div><label>On the way</label></div>
+          <div class="pstage" data-s="3"><div class="node"><div class="dot"></div></div><label>Arrived</label></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- G — ARRIVAL -->
+    <section class="screen" id="arrival">
+      <div class="statusbar light"><span class="clk">9:41</span><div class="right"><span class="bars"><i></i><i></i><i></i><i></i></span><span>5G</span><span class="batt"><i></i></span></div></div>
+      <div class="arrival-wrap">
+        <div class="bell">🔔</div>
+        <div class="buzz-line"></div>
+        <h1>YOUR ORDER<br>IS HERE!</h1>
+        <div class="buzz-line"></div>
+        <div class="vibe-badge">📳 Strong vibration pulse</div>
+        <button class="arrival-cta" onclick="finishFlow()">Rate your meal ⭐</button>
+      </div>
+    </section>
+
+    <div id="buzz"></div>
+    <div class="toast" id="toast"></div>
+  </div>
+</div>
+</div>
+
+<button class="log-toggle" onclick="openLogs()" title="Facilitator logs">📊</button>
+<div class="log-panel" id="logPanel">
+  <button class="log-toggle closebtn" style="position:absolute" onclick="closeLogs()">✕</button>
+  <h2>Interaction Logs</h2>
+  <div class="subt">UmamiGo usability testing — facilitator view</div>
+  <div class="row">
+    <button onclick="renderStats()">↻ Refresh stats</button>
+    <button class="ghost" onclick="downloadCSV()">⬇ CSV</button>
+    <button class="ghost" onclick="downloadJSON()">⬇ JSON</button>
+    <button class="ghost" onclick="copyStats()">📋 Copy summary</button>
+    <button class="ghost" style="background:#7a2a2a" onclick="wipeLogs()">🗑 Clear all</button>
+  </div>
+  <div id="statsArea"></div>
+</div>
+
+<script>
+"use strict";
+
+/* ============== DATA ============== */
+const CUISINES = [
+  {c:"JP", flag:"🇯🇵", label:"JP", name:"Japanese"},
+  {c:"KR", flag:"🇰🇷", label:"KR", name:"Korean"},
+  {c:"CN", flag:"🇨🇳", label:"CN", name:"Chinese"},
+  {c:"TH", flag:"🇹🇭", label:"TH", name:"Thai"},
+  {c:"VN", flag:"🇻🇳", label:"VN", name:"Vietnamese"},
+];
+
+const RESTAURANTS = {
+  sakura:{id:"sakura",c:"JP",name:"Sakura Ramen",flag:"🇯🇵",rate:"4.8",eta:"12 min",emoji:"🍜",loc:"🇯🇵 Osaka, Japan",
+    pin:[18,36], desc:"Tonkotsu — born in Fukuoka in 1940, a rich pork-bone broth simmered 18 hours. Deeply savoury, creamy and warming.",
+    menu:[{n:"Tonkotsu Ramen",o:"🇯🇵 Fukuoka, Japan",sub:"Rich pork broth",p:12,e:"🍜"},
+          {n:"Shoyu Ramen",o:"🇯🇵 Tokyo, Japan",sub:"Soy-based broth",p:11,e:"🍥"},
+          {n:"Gyoza (6)",o:"🇯🇵 Japan",sub:"Pan-fried dumplings",p:6,e:"🥟"}]},
+  kimchi:{id:"kimchi",c:"KR",name:"Kimchi House",flag:"🇰🇷",rate:"4.6",eta:"18 min",emoji:"🍲",loc:"🇰🇷 Seoul, Korea",
+    pin:[52,48], desc:"Kimchi jjigae — a fermented cabbage stew, tangy and deeply spicy, a staple of Korean home cooking.",
+    menu:[{n:"Kimchi Jjigae",o:"🇰🇷 Seoul, Korea",sub:"Fermented stew",p:13,e:"🍲"},
+          {n:"Bibimbap",o:"🇰🇷 Korea",sub:"Mixed rice bowl",p:12,e:"🍚"},
+          {n:"Tteokbokki",o:"🇰🇷 Korea",sub:"Spicy rice cakes",p:9,e:"🌶️"}]},
+  golden:{id:"golden",c:"CN",name:"Golden Wok",flag:"🇨🇳",rate:"4.7",eta:"15 min",emoji:"🥡",loc:"🇨🇳 Sichuan, China",
+    pin:[72,42], desc:"Mapo tofu — silky tofu in a fiery Sichuan sauce of doubanjiang and numbing peppercorns. Bold and aromatic.",
+    menu:[{n:"Mapo Tofu",o:"🇨🇳 Sichuan, China",sub:"Spicy silky tofu",p:11,e:"🥘"},
+          {n:"Dim Sum (8)",o:"🇨🇳 Canton, China",sub:"Steamed assortment",p:14,e:"🥟"},
+          {n:"Kung Pao Chicken",o:"🇨🇳 Sichuan, China",sub:"Peanuts & chilli",p:12,e:"🍗"}]},
+  bangkok:{id:"bangkok",c:"TH",name:"Bangkok Street",flag:"🇹🇭",rate:"4.9",eta:"20 min",emoji:"🍛",loc:"🇹🇭 Bangkok, Thailand",
+    pin:[30,60], desc:"Pad Thai — stir-fried rice noodles with tamarind, peanuts and lime. The iconic dish of Thai street food.",
+    menu:[{n:"Pad Thai",o:"🇹🇭 Bangkok, Thailand",sub:"Tamarind noodles",p:11,e:"🍜"},
+          {n:"Green Curry",o:"🇹🇭 Thailand",sub:"Coconut & basil",p:13,e:"🍛"},
+          {n:"Tom Yum Soup",o:"🇹🇭 Thailand",sub:"Hot & sour",p:10,e:"🍲"}]},
+  pho:{id:"pho",c:"VN",name:"Phở Saigon",flag:"🇻🇳",rate:"4.8",eta:"16 min",emoji:"🍲",loc:"🇻🇳 Hanoi, Vietnam",
+    pin:[22,64], desc:"Phở bò — a clear beef broth simmered with star anise and cinnamon, served with rice noodles and herbs.",
+    menu:[{n:"Phở Bò",o:"🇻🇳 Hanoi, Vietnam",sub:"Beef noodle soup",p:12,e:"🍲"},
+          {n:"Bánh Mì",o:"🇻🇳 Saigon, Vietnam",sub:"Baguette sandwich",p:8,e:"🥖"},
+          {n:"Gỏi Cuốn (4)",o:"🇻🇳 Vietnam",sub:"Fresh spring rolls",p:7,e:"🥬"}]},
+};
+
+let cur = { rid:"sakura", dish:null, qty:1, spice:0, filter:null,
+  spiceNames:["Mild","Medium","Hot","Extra Hot"] };
+
+/* ============== SCALING (no chopping) ============== */
+function fitPhone(){
+  const phone = document.getElementById('phone');
+  if(window.innerWidth <= 480){ phone.style.transform=''; return; }
+  const pad=24;
+  const sx=(window.innerWidth-pad)/390, sy=(window.innerHeight-pad)/844;
+  const s=Math.min(1, sx, sy);
+  phone.style.transform = s<1 ? `scale(${s})` : '';
+}
+window.addEventListener('resize', fitPhone);
+window.addEventListener('orientationchange', fitPhone);
+
+/* ============== LOGGING ============== */
+const LOG_KEY="umamigo_logs_v2";
+let session=null, activeTask=null;
+const TASK_LABELS={T1:"Find a Japanese restaurant",T2:"Search spicy food by voice",
+  T3:"Order a dish at max spice",T4:"Track the delivery rider",T5:"Post-delivery action"};
+
+function loadAll(){ try{return JSON.parse(localStorage.getItem(LOG_KEY))||[];}catch(e){return [];} }
+function saveAll(a){ try{localStorage.setItem(LOG_KEY,JSON.stringify(a));}catch(e){} }
+
+function startSession(){
+  const pid=(document.getElementById('pidInput').value||"").trim()||("P"+(loadAll().length+1));
+  session={pid,started:Date.now(),events:[],tasks:{},ratings:[]};
+  ['T1','T2','T3','T4','T5'].forEach(t=>session.tasks[t]={started:null,ended:null,taps:0,done:false});
+  log('session_start',{pid});
+  beginTask('T1');
+  go('home');
+  toast("Session started: "+pid);
+}
+function persist(){ if(!session)return; const all=loadAll();
+  const i=all.findIndex(s=>s.pid===session.pid&&s.started===session.started);
+  if(i>=0)all[i]=session; else all.push(session); saveAll(all); }
+function log(type,data){ if(!session)return; data=data||{};
+  session.events.push(Object.assign({t:Date.now()-session.started,type},data));
+  if(type==='tap'&&activeTask&&session.tasks[activeTask])session.tasks[activeTask].taps++;
+  persist(); }
+function beginTask(t){ if(!session)return; activeTask=t;
+  if(session.tasks[t].started==null)session.tasks[t].started=Date.now()-session.started;
+  log('task_start',{task:t}); }
+function endTask(t){ if(!session||!session.tasks[t])return;
+  if(!session.tasks[t].done){ session.tasks[t].ended=Date.now()-session.started;
+    session.tasks[t].done=true; log('task_complete',{task:t}); } }
+
+document.addEventListener('click',function(e){ if(!session)return;
+  const el=e.target.closest('button,.chip,.rcard,.pin,.dishrow,.s,.spice-track,.mic-fab,.mic-big,.searchbar input');
+  if(el)log('tap',{target:(el.id||el.className||'el').toString().slice(0,40)}); },true);
+
+/* ============== NAVIGATION ============== */
+let current='welcome';
+function go(id){
+  const from=document.getElementById(current), to=document.getElementById(id);
+  if(from&&from!==to){ from.classList.remove('active'); from.classList.add('leaving');
+    setTimeout(()=>from.classList.remove('leaving'),340); }
+  to.classList.add('active');
+  const sc=to.querySelector('.scroll'); if(sc)sc.scrollTop=0;
+  const cb=to.querySelector('.confirm-body'); if(cb)cb.scrollTop=0;
+  current=id; log('screen',{screen:id});
+}
+function back(id){ go(id); }
+
+/* ============== BUILD HOME ============== */
+function buildChips(){
+  const wrap=document.getElementById('chips'); wrap.innerHTML="";
+  CUISINES.forEach(cu=>{
+    const el=document.createElement('div');
+    el.className="chip"; el.dataset.c=cu.c;
+    el.innerHTML=`${cu.flag} ${cu.label}<span class="dot"></span>`;
+    el.onclick=()=>pickChip(el,cu);
+    wrap.appendChild(el);
+  });
+}
+function buildPins(){
+  const wrap=document.getElementById('mapPins'); wrap.innerHTML="";
+  Object.values(RESTAURANTS).forEach(r=>{
+    const p=document.createElement('div');
+    p.className="pin"; p.dataset.c=r.c;
+    p.style.left=r.pin[0]+"%"; p.style.top=r.pin[1]+"%";
+    p.onclick=()=>goRestaurant(r.id);
+    p.innerHTML=`<svg viewBox="0 0 36 44"><path fill="#FF6B5C" d="M18 0C8 0 1 7 1 17c0 12 17 27 17 27s17-15 17-27C35 7 28 0 18 0z"/><circle cx="18" cy="17" r="7" fill="#fff"/></svg>`;
+    wrap.appendChild(p);
+  });
+}
+function renderSheet(){
+  const list=Object.values(RESTAURANTS).filter(r=>!cur.filter||r.c===cur.filter);
+  const cards=document.getElementById('sheetCards');
+  const title=document.getElementById('sheetTitle');
+  const count=document.getElementById('sheetCount');
+  const cuObj=CUISINES.find(x=>x.c===cur.filter);
+  title.textContent = cur.filter ? (cuObj.name+" restaurants") : "Nearby restaurants";
+  count.textContent = list.length+" found";
+  cards.style.opacity=0;
+  setTimeout(()=>{
+    if(!list.length){ cards.innerHTML=`<div class="sheet-empty">No ${cuObj?cuObj.name:''} restaurants nearby right now.</div>`; }
+    else {
+      cards.innerHTML=list.map(r=>`
+        <div class="rcard" onclick="goRestaurant('${r.id}')">
+          <div class="thumb">${r.emoji}</div>
+          <div class="info">
+            <div class="name">${r.name} <span>${r.flag}</span></div>
+            <div class="meta"><span class="star">★ ${r.rate}</span><span>🕒 ${r.eta}</span></div>
+          </div><div class="chev">›</div>
+        </div>`).join("");
+    }
+    cards.style.opacity=1;
+  },140);
+}
+function pickChip(el,cu){
+  const wasActive=el.classList.contains('active');
+  document.querySelectorAll('#chips .chip').forEach(x=>x.classList.remove('active'));
+  if(wasActive){ cur.filter=null; el.classList.remove('active'); buzz('soft'); toast("Showing all cuisines"); }
+  else { cur.filter=cu.c; el.classList.add('active'); buzz('soft'); toast("Showing "+cu.name+" restaurants"); }
+  // dim non-matching pins
+  document.querySelectorAll('#mapPins .pin').forEach(p=>{
+    p.classList.toggle('dim', cur.filter && p.dataset.c!==cur.filter);
+  });
+  log('filter',{cuisine:cur.filter});
+  renderSheet();
+}
+
+function goRestaurant(rid){
+  cur.rid=rid; const r=RESTAURANTS[rid];
+  if(activeTask==='T1') endTask('T1');
+  document.getElementById('rName').textContent=r.name;
+  document.getElementById('rName2').textContent=r.name;
+  document.getElementById('rFlag').textContent=r.flag;
+  document.getElementById('rRate').textContent=r.rate;
+  document.getElementById('rRate2').textContent=r.rate;
+  document.getElementById('rEmoji').textContent=r.emoji;
+  document.getElementById('rLoc').textContent=r.loc;
+  document.getElementById('rDesc').textContent=r.desc;
+  const ml=document.getElementById('menuList'); ml.innerHTML="";
+  r.menu.forEach((d,i)=>{
+    const row=document.createElement('div'); row.className="dishrow"; row.onclick=()=>goDish(i);
+    row.innerHTML=`<div class="demoji">${d.e}</div><div class="dinfo"><div class="dn">${d.n}</div><div class="do">${d.sub}</div></div><div class="price">${d.p}€</div>`;
+    ml.appendChild(row);
+  });
+  buzz('soft'); go('restaurant');
+}
+
+/* ============== VOICE ============== */
+function openVoice(){ beginTask('T2');
+  document.getElementById('heard').textContent="";
+  document.getElementById('ghost').style.display="block";
+  document.getElementById('ghost').textContent='Tap the mic and say “spicy ramen near me”';
+  go('voice'); }
+function closeVoice(){ stopWaves(); go('home'); }
+let recognition=null;
+function doVoice(){
+  buzz('soft'); startWaves();
+  document.getElementById('micBig').classList.add('listening');
+  log('voice_start');
+  const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+  if(SR){
+    try{
+      recognition=new SR(); recognition.lang='en-US'; recognition.interimResults=false; recognition.maxAlternatives=1;
+      recognition.onresult=ev=>onHeard(ev.results[0][0].transcript);
+      recognition.onerror=()=>onHeard("spicy ramen near me");
+      recognition.onend=()=>{ stopWaves(); document.getElementById('micBig').classList.remove('listening'); };
+      recognition.start();
+      document.getElementById('ghost').textContent="Listening… speak now";
+      return;
+    }catch(e){}
+  }
+  document.getElementById('ghost').textContent="Listening…";
+  setTimeout(()=>{ onHeard("spicy ramen near me"); },1700);
+}
+function onHeard(txt){
+  stopWaves(); document.getElementById('micBig').classList.remove('listening');
+  document.getElementById('ghost').style.display="none";
+  document.getElementById('heard').textContent="“"+txt+"”";
+  log('voice_result',{text:txt}); buzz('double');
+  endTask('T2');
+  setTimeout(()=>{ toast("Found spicy matches near you"); goRestaurant('sakura'); },1000);
+}
+function startWaves(){ document.getElementById('waves').classList.add('on'); }
+function stopWaves(){ document.getElementById('waves').classList.remove('on');
+  if(recognition){ try{recognition.stop();}catch(e){} } }
+
+/* ============== DISH ============== */
+function goDish(i){
+  beginTask('T3'); const r=RESTAURANTS[cur.rid];
+  cur.dish=r.menu[i]; cur.qty=1; cur.spice=0;
+  document.getElementById('dName').textContent=cur.dish.n;
+  document.getElementById('dName2').textContent=cur.dish.n;
+  document.getElementById('dRate').textContent=r.rate;
+  document.getElementById('dEmoji').textContent=cur.dish.e;
+  document.getElementById('dOrigin').textContent=cur.dish.o+" — "+cur.dish.sub;
+  setSpice(0); changeQty(0); go('dish');
+}
+function setSpice(level){
+  cur.spice=Math.max(0,Math.min(3,level));
+  document.getElementById('spiceThumb').style.left=(cur.spice/3)*100+"%";
+  document.getElementById('spiceVal').textContent=cur.spiceNames[cur.spice]+(cur.spice===3?" 🔥🔥🔥":"");
+  buzz('tick'); log('spice',{level:cur.spice});
+}
+function spiceFromX(clientX){
+  const t=document.getElementById('spiceTrack'), r=t.getBoundingClientRect();
+  const pct=Math.min(1,Math.max(0,(clientX-r.left)/r.width));
+  setSpice(Math.round(pct*3));
+}
+(function bindSpice(){
+  const t=document.getElementById('spiceTrack'); let drag=false;
+  t.addEventListener('pointerdown',e=>{drag=true;spiceFromX(e.clientX);t.setPointerCapture(e.pointerId);});
+  t.addEventListener('pointermove',e=>{if(drag)spiceFromX(e.clientX);});
+  t.addEventListener('pointerup',()=>drag=false);
+  t.addEventListener('pointercancel',()=>drag=false);
+})();
+function changeQty(d){
+  cur.qty=Math.max(1,cur.qty+d);
+  document.getElementById('qtyNum').textContent=cur.qty;
+  if(d!==0){ buzz('tick'); log('qty',{qty:cur.qty}); }
+  const total=cur.dish?cur.dish.p*cur.qty:12;
+  document.getElementById('addLabel').textContent=`Add to Cart · ${total}€`;
+}
+function addToCart(){
+  buzz('strong'); playChime();
+  log('add_to_cart',{dish:cur.dish&&cur.dish.n,qty:cur.qty,spice:cur.spice});
+  if(session)session.tasks.T3.maxSpice=(cur.spice===3);
+  endTask('T3');
+  const total=cur.dish.p*cur.qty;
+  document.getElementById('cookLine').textContent=RESTAURANTS[cur.rid].name+" is cooking";
+  document.getElementById('cItem').textContent=`${cur.dish.n} ×${cur.qty}`;
+  document.getElementById('cItemP').textContent=total+"€";
+  document.getElementById('cTotal').textContent=(total+1.99).toFixed(2)+"€";
+  go('confirm');
+}
+
+/* ============== CONFIRM ============== */
+function toggleRate(){ const row=document.getElementById('starsRow');
+  row.style.display=row.style.display==='none'?'flex':'none'; log('rate_open'); }
+function rate(v){
+  document.querySelectorAll('#starsRow .s').forEach(s=>s.classList.toggle('lit',+s.dataset.v<=v));
+  buzz('soft'); if(session)session.ratings.push(v); log('rating',{stars:v});
+  if(activeTask==='T5')endTask('T5');
+  toast("Thanks for rating "+v+"★");
+}
+function goTracking(){ beginTask('T4'); go('tracking'); runDelivery(); }
+
+/* ============== TRACKING ============== */
+const RIDER_PATH=[[18,30],[35,42],[48,54],[57,64],[62,71]];
+let deliveryStarted=false;
+function runDelivery(){
+  if(deliveryStarted)return; deliveryStarted=true;
+  const stages=document.querySelectorAll('#tracking .pstage');
+  const fill=document.getElementById('pfill'), rider=document.getElementById('rider'), eta=document.getElementById('etaVal');
+  let step=2; // confirmed + cooking already done; start "on the way"
+  stages[0].classList.add('done'); stages[1].classList.add('done');
+  function advance(){
+    if(step<stages.length){
+      stages.forEach((s,i)=>{ s.classList.toggle('done',i<step); s.classList.toggle('active',i===step); });
+      fill.style.width=(step/(stages.length-1))*100+"%";
+      if(RIDER_PATH[step]){ rider.style.left=RIDER_PATH[step][0]+"%"; rider.style.top=RIDER_PATH[step][1]+"%"; }
+      eta.textContent=Math.max(1,(stages.length-1-step)*4)+" min";
+      log('track_stage',{stage:step}); buzz('tick'); step++;
+      setTimeout(advance, 2400);
+    } else {
+      stages.forEach(s=>{s.classList.add('done');s.classList.remove('active');});
+      fill.style.width="100%"; eta.textContent="Arrived";
+      endTask('T4');
+      setTimeout(()=>{ beginTask('T5'); arrive(); },1200);
+    }
+  }
+  advance();
+}
+function arrive(){ buzz('arrival'); playArrivalSound(); go('arrival'); }
+function finishFlow(){ toast("Tap “Rate this order” to finish"); go('confirm');
+  document.getElementById('starsRow').style.display='flex'; }
+
+/* ============== FEEDBACK (cross-platform) ============== */
+/* Real vibration where supported (Android/Chrome) PLUS a visual buzz + audio
+   tick so the haptic cue also lands on iOS, which blocks navigator.vibrate. */
+const VIBE={ soft:15, tick:[8], double:[20,40,20], strong:[30,50,30], arrival:[80,60,80,60,120] };
+function buzz(kind){
+  const p=VIBE[kind]||15;
+  if(navigator.vibrate){ try{navigator.vibrate(p);}catch(e){} }
+  // visual flash
+  const b=document.getElementById('buzz');
+  b.classList.remove('go'); void b.offsetWidth; b.classList.add('go');
+  // physical "shake" for the stronger cues so iOS users feel a clear cue
+  if(kind==='strong'||kind==='arrival'||kind==='double'){
+    const ph=document.getElementById('phone');
+    ph.classList.remove('shake'); void ph.offsetWidth; ph.classList.add('shake');
+    setTimeout(()=>ph.classList.remove('shake'),420);
+  }
+  // audio tick (very short) as an extra haptic-substitute on iOS
+  tick(kind);
+  log('haptic',{kind, pattern:Array.isArray(p)?p.join(','):p, vibrateAPI: !!navigator.vibrate});
+}
+
+let actx=null;
+function audioCtx(){ if(!actx){ try{actx=new (window.AudioContext||window.webkitAudioContext)();}catch(e){} } 
+  if(actx&&actx.state==='suspended'){ actx.resume(); } return actx; }
+function tone(freq,dur,type,vol,delay){ const c=audioCtx(); if(!c)return;
+  const o=c.createOscillator(),g=c.createGain(); o.type=type||'sine'; o.frequency.value=freq;
+  o.connect(g); g.connect(c.destination); const t=c.currentTime+(delay||0);
+  g.gain.setValueAtTime(0,t); g.gain.linearRampToValueAtTime(vol||.15,t+.02);
+  g.gain.exponentialRampToValueAtTime(.0001,t+dur); o.start(t); o.stop(t+dur); }
+function tick(kind){ // tiny click as physical-feel substitute
+  if(kind==='soft'||kind==='tick'){ tone(220,0.04,'square',0.06,0); }
+  else if(kind==='double'){ tone(300,0.05,'square',0.08,0); tone(300,0.05,'square',0.08,0.08); }
+}
+function playChime(){ tone(660,0.12,'sine',0.18,0); tone(880,0.18,'sine',0.16,0.1); }
+function playArrivalSound(){ tone(523,0.15,'triangle',0.2,0); tone(659,0.15,'triangle',0.2,0.15); tone(784,0.3,'triangle',0.2,0.3); }
+
+/* ============== TOAST + CLOCK ============== */
+let toastTimer=null;
+function toast(msg){ const t=document.getElementById('toast'); t.textContent=msg; t.classList.add('show');
+  clearTimeout(toastTimer); toastTimer=setTimeout(()=>t.classList.remove('show'),2200); }
+function tickClock(){ const s=new Date().toTimeString().slice(0,5);
+  document.querySelectorAll('.clk').forEach(e=>e.textContent=s); }
+setInterval(tickClock,1000); tickClock();
+
+/* ============== STATS / EXPORT ============== */
+function openLogs(){ document.getElementById('logPanel').classList.add('show'); renderStats(); }
+function closeLogs(){ document.getElementById('logPanel').classList.remove('show'); }
+function wipeLogs(){ if(confirm("Delete ALL logged sessions?")){ saveAll([]); renderStats(); } }
+function mean(a){ return a.length?a.reduce((x,y)=>x+y,0)/a.length:0; }
+function sd(a){ if(a.length<2)return 0; const m=mean(a); return Math.sqrt(mean(a.map(x=>(x-m)*(x-m)))); }
+function median(a){ if(!a.length)return 0; const s=[...a].sort((x,y)=>x-y),m=Math.floor(s.length/2);
+  return s.length%2?s[m]:(s[m-1]+s[m])/2; }
+
+function renderStats(){
+  const all=loadAll(), area=document.getElementById('statsArea');
+  if(!all.length){ area.innerHTML="<p style='color:#aaa'>No sessions logged yet. Run the app with a participant ID.</p>"; return; }
+  const TASKS=['T1','T2','T3','T4','T5'], agg={};
+  TASKS.forEach(t=>agg[t]={times:[],taps:[],done:0});
+  all.forEach(s=>TASKS.forEach(t=>{ const tk=s.tasks&&s.tasks[t]; if(!tk)return;
+    if(tk.done&&tk.started!=null&&tk.ended!=null){agg[t].times.push((tk.ended-tk.started)/1000);agg[t].done++;}
+    if(typeof tk.taps==='number')agg[t].taps.push(tk.taps); }));
+  const n=all.length, ratings=all.flatMap(s=>s.ratings||[]), events=all.reduce((a,s)=>a+(s.events?s.events.length:0),0);
+  let html=`<div class="statgrid">
+    <div class="statcard"><div class="k">Participants</div><div class="v">${n}</div></div>
+    <div class="statcard"><div class="k">Events logged</div><div class="v">${events}</div></div>
+    <div class="statcard"><div class="k">Mean rating</div><div class="v">${ratings.length?mean(ratings).toFixed(1)+"★":"—"}</div></div>
+    <div class="statcard"><div class="k">Overall completion</div><div class="v">${Math.round(mean(TASKS.map(t=>agg[t].done/n))*100)}%</div></div>
+  </div><table><tr><th>Task</th><th>Done</th><th>Mean t (s)</th><th>SD</th><th>Median</th><th>Taps</th></tr>`;
+  TASKS.forEach(t=>{ const a=agg[t]; html+=`<tr><td>${t} ${TASK_LABELS[t]}</td><td>${a.done}/${n}</td>
+    <td>${a.times.length?mean(a.times).toFixed(1):"—"}</td><td>${a.times.length>1?sd(a.times).toFixed(1):"—"}</td>
+    <td>${a.times.length?median(a.times).toFixed(1):"—"}</td><td>${a.taps.length?mean(a.taps).toFixed(1):"—"}</td></tr>`; });
+  html+=`</table><h2 style="font-size:16px;margin:22px 0 6px">Sessions</h2>
+    <table><tr><th>PID</th><th>Done</th><th>Events</th><th>Rating</th><th>Date</th></tr>`;
+  all.forEach(s=>{ const done=TASKS.filter(t=>s.tasks&&s.tasks[t]&&s.tasks[t].done).length;
+    html+=`<tr><td>${s.pid}</td><td>${done}/5</td><td>${s.events?s.events.length:0}</td>
+    <td>${s.ratings&&s.ratings.length?s.ratings[s.ratings.length-1]+"★":"—"}</td>
+    <td>${new Date(s.started).toLocaleString()}</td></tr>`; });
+  html+=`</table>`; area.innerHTML=html;
+}
+function summaryText(){
+  const all=loadAll(), TASKS=['T1','T2','T3','T4','T5'];
+  let out=`UmamiGo usability test — ${all.length} participants\n\nTask\tCompletion\tMean time (s)\tSD\tMedian\tMean taps\n`;
+  TASKS.forEach(t=>{ const times=[],taps=[]; let done=0;
+    all.forEach(s=>{ const tk=s.tasks&&s.tasks[t]; if(tk&&tk.done&&tk.started!=null){times.push((tk.ended-tk.started)/1000);done++;} if(tk)taps.push(tk.taps); });
+    out+=`${t} ${TASK_LABELS[t]}\t${done}/${all.length}\t${times.length?mean(times).toFixed(1):"-"}\t${times.length>1?sd(times).toFixed(1):"-"}\t${times.length?median(times).toFixed(1):"-"}\t${taps.length?mean(taps).toFixed(1):"-"}\n`; });
+  const r=all.flatMap(s=>s.ratings||[]); out+=`\nMean rating: ${r.length?mean(r).toFixed(2):"-"} (n=${r.length})\n`;
+  return out;
+}
+function copyStats(){ navigator.clipboard.writeText(summaryText()).then(()=>toast("Summary copied")); }
+function downloadJSON(){ dl(new Blob([JSON.stringify(loadAll(),null,2)],{type:'application/json'}),'umamigo_logs.json'); }
+function downloadCSV(){ const all=loadAll(); let rows=[["pid","event_ms","type","detail"]];
+  all.forEach(s=>(s.events||[]).forEach(e=>{ const o=Object.assign({},e); delete o.t; delete o.type;
+    rows.push([s.pid,e.t,e.type,JSON.stringify(o).replace(/"/g,"'")]); }));
+  dl(new Blob([rows.map(r=>r.map(c=>`"${c}"`).join(",")).join("\n")],{type:'text/csv'}),'umamigo_events.csv'); }
+function dl(blob,name){ const u=URL.createObjectURL(blob),a=document.createElement('a');
+  a.href=u; a.download=name; a.click(); URL.revokeObjectURL(u); toast("Downloaded "+name); }
+
+/* ============== INIT ============== */
+buildChips(); buildPins(); renderSheet(); fitPhone();
+// unlock audio on first interaction (iOS requirement)
+document.addEventListener('pointerdown',function unlock(){ audioCtx(); document.removeEventListener('pointerdown',unlock); },{once:true});
+
+if('serviceWorker' in navigator){
+  const sw="self.addEventListener('install',e=>self.skipWaiting());self.addEventListener('activate',e=>self.clients.claim());self.addEventListener('fetch',e=>{});";
+  try{ navigator.serviceWorker.register(URL.createObjectURL(new Blob([sw],{type:'text/javascript'}))).catch(()=>{}); }catch(e){}
+}
+</script>
+</body>
+</html>

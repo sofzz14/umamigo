@@ -1,0 +1,1416 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#FF6B5C">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="UmamiGo">
+<meta name="description" content="UmamiGo — Asian food delivery">
+<link rel="manifest" href="data:application/json;base64,eyJuYW1lIjoiVW1hbWlHbyIsInNob3J0X25hbWUiOiJVbWFtaUdvIiwic3RhcnRfdXJsIjoiLiIsImRpc3BsYXkiOiJzdGFuZGFsb25lIiwiYmFja2dyb3VuZF9jb2xvciI6IiNGRjZCNUMiLCJ0aGVtZV9jb2xvciI6IiNGRjZCNUMiLCJpY29ucyI6W3sic3JjIjoiZGF0YTppbWFnZS9zdmcreG1sLGJhc2U2NCxQSE4yWnlCNGJXeHVjejBpYUhSMGNEb3ZMM2QzZHk1M015NXZjbWN2TWpBd01DOXpkbWNpSUhacFpYZENiM2c5SWpBZ01DQXhNREFnTVRBd0lqNDhjbVZqZENCM2FXUjBhRDBpTVRBd0lpQm9aV2xuYUhROUlqRXdNQ0lnY25nOUlqSXdJaUJtYVd4c1BTSWpSa1kyUWpWRElpOCtQSFJsZUhRZ2VEMGlOVEFpSUhrOUlqWXdJaUJtYjI1MExYTnBlbVU5SWpVd0lpQjBaWGgwTFdGdVkyaHZjajBpYldsa1pHeGxJaUJtYVd4c1BTSjNhR2wwWlNJK0Zqd3ZkR1Y0ZD09Iiwic2l6ZXMiOiIxOTJ4MTkyIiwidHlwZSI6ImltYWdlL3N2Zyt4bWwifV19">
+<title>UmamiGo</title>
+<style>
+/* =========================================================
+   UmamiGo — Asian food delivery (functional prototype)
+   Single-file PWA. Styles grouped by screen, in flow order.
+========================================================= */
+
+@import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700;9..144,900&family=Manrope:wght@400;500;600;700;800&display=swap');
+
+/* ---- Theme colours & shared values ---- */
+:root{
+  --coral:#FF6B5C; --coral-dark:#E8503F; --navy:#3A3A8C;
+  --green:#34C759; --orange:#FF8A3D; --ink:#262247; --muted:#8A86B0;
+  --line:#E8E6F5; --bg:#F3F1FC; --white:#FFFFFF;
+  /* purple / lavender theme */
+  --purple:#7C6BF5; --purple-deep:#5B4BD6; --lavender:#EDEAFD;
+  --lavender-soft:#F5F2FF; --periwinkle:#A9A6F0;
+  --display:'Fraunces',Georgia,serif; --body:'Manrope',system-ui,sans-serif;
+  --shadow-sm:0 2px 8px rgba(60,50,140,.10);
+  --shadow:0 8px 28px rgba(60,50,140,.16);
+  --shadow-lg:0 18px 50px rgba(60,50,140,.24);
+}
+
+/* ---- Base ---- */
+*{ margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; -webkit-user-select:none; user-select:none; }
+html,body{ height:100%; }
+body{
+  font-family:var(--body); color:var(--ink); min-height:100dvh; overflow:hidden; padding:12px;
+  display:flex; align-items:center; justify-content:center; -webkit-font-smoothing:antialiased;
+  background:
+    radial-gradient(900px 500px at 12% -8%, rgba(124,107,245,.18), transparent 60%),
+    radial-gradient(800px 500px at 100% 110%, rgba(91,75,214,.16), transparent 55%),
+    #E6E2F7;
+}
+
+/* ---- Phone frame (scales to fit desktop; fills screen on real phones) ---- */
+.phone{
+  position:relative; width:390px; height:844px; background:#0a0a0f;
+  border-radius:56px; padding:12px; flex:none; transform-origin:center;
+  box-shadow:var(--shadow-lg), 0 0 0 2px rgba(255,255,255,.06) inset;
+}
+.screen-host{ position:relative; width:100%; height:100%; background:var(--bg); border-radius:44px; overflow:hidden; }
+.notch{ position:absolute; top:14px; left:50%; transform:translateX(-50%); width:120px; height:32px; background:#0a0a0f; border-radius:20px; z-index:9999; }
+@media (max-width:480px){
+  body{ padding:0; }
+  .phone{ width:100vw; height:100dvh; border-radius:0; padding:0; box-shadow:none; background:var(--bg); }
+  .screen-host{ border-radius:0; }
+  .notch{ display:none; }
+}
+
+/* ---- Screen switching ---- */
+.screen{ position:absolute; inset:0; display:none; flex-direction:column; overflow:hidden;
+  opacity:0; transform:translateX(26px); transition:opacity .32s ease, transform .32s ease; }
+.screen.active{ display:flex; opacity:1; transform:translateX(0); z-index:5; }
+.screen.leaving{ display:flex; opacity:0; transform:translateX(-26px); z-index:4; pointer-events:none; }
+.scroll{ flex:1; overflow-y:auto; -webkit-overflow-scrolling:touch; }
+.scroll::-webkit-scrollbar{ display:none; }
+
+/* ---- iOS-style status bar ---- */
+.statusbar{ height:54px; flex:none; display:flex; align-items:center; justify-content:space-between;
+  padding:14px 30px 0; font-size:15px; font-weight:700; color:var(--ink); z-index:50; position:relative; }
+.statusbar.light{ color:#fff; }
+.statusbar .right{ display:flex; gap:7px; align-items:center; font-size:13px; }
+.statusbar .bars{ display:flex; gap:2px; align-items:flex-end; height:11px; }
+.statusbar .bars i{ width:3px; background:currentColor; border-radius:1px; }
+.statusbar .bars i:nth-child(1){height:4px;} .statusbar .bars i:nth-child(2){height:6px;}
+.statusbar .bars i:nth-child(3){height:8px;} .statusbar .bars i:nth-child(4){height:11px;}
+.statusbar .batt{ width:24px; height:12px; border:1.5px solid currentColor; border-radius:3px; position:relative; }
+.statusbar .batt::after{ content:""; position:absolute; right:-3px; top:3px; width:2px; height:6px; background:currentColor; border-radius:0 2px 2px 0; }
+.statusbar .batt i{ position:absolute; inset:1.5px; background:currentColor; border-radius:1px; }
+
+/* =========================================================
+   WELCOME SCREEN
+========================================================= */
+#welcome{ background:linear-gradient(160deg,#8E7BF7,#6453DB 60%,#4E3DC4); z-index:200; }
+.welcome-wrap{ flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:0 36px; text-align:center; }
+.welcome-wrap .big{ font-size:64px; margin-bottom:6px; }
+.welcome-wrap h1{ font-family:var(--display); font-size:46px; font-weight:900; color:#fff; letter-spacing:-1px; }
+.welcome-wrap h1 span{ display:block; font-size:17px; font-weight:600; opacity:.9; margin-top:8px; font-family:var(--body); }
+.welcome-wrap p{ color:rgba(255,255,255,.85); font-size:14px; margin-top:20px; line-height:1.55; font-weight:500; }
+.pid-input{ margin-top:24px; width:100%; background:rgba(255,255,255,.16); border:1.5px solid rgba(255,255,255,.35);
+  border-radius:14px; padding:14px 16px; color:#fff; font-family:var(--body); font-size:15px; font-weight:600; text-align:center; outline:none; }
+.pid-input::placeholder{ color:rgba(255,255,255,.6); }
+.welcome-cta{ margin-top:16px; width:100%; background:#fff; color:var(--purple-deep); border:none; border-radius:14px;
+  padding:16px; font-family:var(--body); font-weight:800; font-size:16px; cursor:pointer; box-shadow:var(--shadow); }
+.welcome-cta:active{ transform:scale(.97); }
+
+/* =========================================================
+   HOME SCREEN — draggable map, filters, swipe-up sheet
+========================================================= */
+.map{ position:absolute; inset:0; background:#e9eef3; overflow:hidden; touch-action:none; }
+/* the layer that actually slides under the finger */
+.map-pan{ position:absolute; left:-30%; top:-20%; width:160%; height:150%; will-change:transform; }
+.map-pan svg{ width:100%; height:100%; display:block; }
+.road{ stroke:#fff; stroke-linecap:round; fill:none; }
+.road.big{ stroke-width:9; } .road.med{ stroke-width:5; } .road.sm{ stroke-width:2.5; stroke:#f4f6f8; }
+.block{ fill:#dfe6ec; } .park{ fill:#cfe8d4; }
+.map-label{ font-family:var(--body); font-size:11px; fill:#9aa3ad; font-weight:600; }
+
+.pin{ position:absolute; transform:translate(-50%,-100%); cursor:pointer;
+  filter:drop-shadow(0 6px 8px rgba(232,80,63,.4)); transition:transform .15s, opacity .25s; }
+.pin:active{ transform:translate(-50%,-100%) scale(.86); }
+.pin svg{ width:36px; height:44px; display:block; }
+.pin.dim{ opacity:.28; filter:grayscale(.6) drop-shadow(0 4px 5px rgba(0,0,0,.15)); }
+.pin.home{ filter:drop-shadow(0 5px 7px rgba(0,0,0,.25)); }
+.pin.home svg{ width:40px; height:40px; }
+
+.home-top{ position:absolute; top:54px; left:0; right:0; z-index:40; padding:8px 16px 12px;
+  background:linear-gradient(180deg, rgba(243,241,252,.96) 0%, rgba(243,241,252,.96) 78%, rgba(243,241,252,0) 100%); }
+.brand{ display:flex; align-items:center; gap:8px; margin:2px 4px 14px; }
+.brand .logo{ width:32px; height:32px; border-radius:10px; background:var(--purple); display:grid; place-items:center; font-size:18px; box-shadow:var(--shadow-sm); }
+.brand b{ font-family:var(--display); font-size:22px; font-weight:900; letter-spacing:-.5px; }
+.brand b span{ color:var(--purple); }
+.searchbar{ display:flex; align-items:center; gap:10px; background:#fff; border-radius:18px; padding:14px; box-shadow:var(--shadow); border:1.5px solid var(--lavender); }
+.searchbar .mag{ color:var(--purple); font-size:17px; }
+.searchbar input{ border:none; outline:none; flex:1; font-family:var(--body); font-size:15px; font-weight:500; color:var(--ink); background:transparent; cursor:pointer; }
+.searchbar input::placeholder{ color:var(--muted); }
+.mic-fab{ width:44px; height:44px; border-radius:14px; background:var(--purple); border:none; display:grid; place-items:center;
+  flex:none; box-shadow:0 4px 12px rgba(124,107,245,.45); cursor:pointer; transition:transform .12s; }
+.mic-fab:active{ transform:scale(.9); }
+.mic-fab svg{ width:20px; height:20px; }
+.chips{ display:flex; gap:8px; margin:14px -16px 0; padding:2px 20px 8px 16px; overflow-x:auto;
+  touch-action:pan-x; -webkit-overflow-scrolling:touch; cursor:grab; scroll-snap-type:x proximity; }
+.chips.dragging{ cursor:grabbing; scroll-behavior:auto; }
+.chips::-webkit-scrollbar{ display:none; }
+.chip{ flex:0 0 auto; display:flex; align-items:center; gap:5px; background:var(--lavender); border:1.5px solid transparent;
+  border-radius:999px; padding:9px 14px; font-size:13px; font-weight:700; color:var(--purple-deep);
+  box-shadow:var(--shadow-sm); cursor:pointer; position:relative; transition:all .18s; white-space:nowrap; scroll-snap-align:start; }
+.chip:active{ transform:scale(.94); }
+.chip.active{ background:var(--purple); color:#fff; border-color:var(--purple); box-shadow:0 4px 14px rgba(124,107,245,.45); }
+.chip .dot{ position:absolute; top:-3px; right:-3px; width:11px; height:11px; border-radius:50%; background:#fff; border:2px solid var(--purple); display:none; }
+.chip.active .dot{ display:block; }
+
+/* Bottom sheet — draggable between "peek" and "expanded".
+   --sheet-top is set in JS to just below the chips, so even fully expanded
+   the sheet (and its drag handle) stays clear of the search bar and chips. */
+.sheet{ position:absolute; left:0; right:0; bottom:0; z-index:25; background:#fff;
+  border-radius:26px 26px 0 0; box-shadow:0 -10px 40px rgba(30,32,71,.18);
+  top:var(--sheet-top, 230px); padding:0 16px; display:flex; flex-direction:column;
+  transition:transform .35s cubic-bezier(.25,.9,.3,1); will-change:transform; }
+/* the header (handle + title) is the drag grip; touch-action:none lets us own the gesture */
+.sheet-header{ flex:none; cursor:grab; touch-action:none; padding:12px 0 6px; }
+.sheet-header:active{ cursor:grabbing; }
+.sheet .handle{ width:46px; height:6px; border-radius:3px; background:#cfcde0; margin:0 auto 14px; }
+.sheet h3{ font-size:14px; font-weight:800; margin:0 4px 12px; color:var(--ink); display:flex; justify-content:space-between; }
+.sheet h3 .count{ color:var(--purple); font-weight:700; }
+/* the list scrolls on its own; big bottom padding keeps the last card clear of the edge */
+.sheet-list{ overflow-y:auto; flex:1; transition:opacity .2s; padding-bottom:150px; -webkit-overflow-scrolling:touch; touch-action:pan-y; }
+.sheet-list::-webkit-scrollbar{ display:none; }
+.rcard{ display:flex; gap:13px; align-items:center; padding:11px; border-radius:18px; background:var(--bg); margin-bottom:10px; cursor:pointer; transition:transform .14s, background .14s; }
+.rcard:active{ transform:scale(.98); background:#eef0f6; }
+.rcard .thumb{ width:58px; height:58px; border-radius:15px; flex:none; display:grid; place-items:center; font-size:28px; background:linear-gradient(135deg,#fff,#f0f0f6); box-shadow:var(--shadow-sm); }
+.rcard .info{ flex:1; min-width:0; }
+.rcard .info .name{ font-weight:800; font-size:15px; display:flex; align-items:center; gap:6px; }
+.rcard .info .meta{ font-size:12.5px; color:var(--muted); margin-top:3px; display:flex; gap:12px; font-weight:600; }
+.rcard .info .meta .star{ color:#F5A623; }
+.rcard .chev{ color:var(--muted); font-size:20px; }
+.sheet-empty{ text-align:center; color:var(--muted); font-size:13px; font-weight:600; padding:18px 0; }
+
+/* =========================================================
+   VOICE SEARCH SCREEN
+========================================================= */
+#voice{ background:linear-gradient(160deg,#9B93F2,#7A6BE8 60%,#6453DB); }
+.voice-wrap{ flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; position:relative; padding:0 30px; }
+.voice-back{ position:absolute; top:14px; left:18px; background:rgba(255,255,255,.14); border:none; color:#fff;
+  border-radius:14px; padding:10px 16px; font-family:var(--body); font-weight:700; font-size:14px; display:flex; align-items:center; gap:6px; cursor:pointer; }
+.voice-back:active{ background:rgba(255,255,255,.26); }
+.mic-stage{ position:relative; width:230px; height:230px; display:grid; place-items:center; }
+.ring{ position:absolute; border-radius:50%; border:2px solid #fff; }
+.ring.r1{ width:200px; height:200px; opacity:.20; animation:pulse 2s ease-out infinite; }
+.ring.r2{ width:150px; height:150px; opacity:.10; animation:pulse 2s ease-out infinite .4s; }
+@keyframes pulse{ 0%{transform:scale(.85);opacity:.3;} 100%{transform:scale(1.25);opacity:0;} }
+.mic-big{ width:108px; height:108px; border-radius:50%; background:#fff; display:grid; place-items:center;
+  box-shadow:0 12px 40px rgba(0,0,0,.35); cursor:pointer; z-index:2; transition:transform .15s; }
+.mic-big:active{ transform:scale(.93); }
+.mic-big.listening{ animation:micpulse 1s ease-in-out infinite; }
+@keyframes micpulse{ 0%,100%{box-shadow:0 12px 40px rgba(0,0,0,.35);} 50%{box-shadow:0 12px 50px rgba(255,107,92,.7);} }
+.mic-big svg{ width:46px; height:46px; }
+.ghost-hint{ margin-top:34px; color:rgba(255,255,255,.62); font-style:italic; font-size:15px; text-align:center; font-weight:500; min-height:24px; padding:0 20px; }
+.heard{ margin-top:8px; color:#fff; font-weight:700; font-size:18px; text-align:center; min-height:26px; }
+.waves{ position:absolute; bottom:80px; display:flex; gap:5px; align-items:center; height:46px; }
+.waves span{ width:5px; border-radius:3px; background:#fff; opacity:.85; height:10px; }
+.waves.on span{ animation:wave .7s ease-in-out infinite; }
+.waves span:nth-child(1){animation-delay:0s;}.waves span:nth-child(2){animation-delay:.1s;}
+.waves span:nth-child(3){animation-delay:.2s;}.waves span:nth-child(4){animation-delay:.3s;}
+.waves span:nth-child(5){animation-delay:.4s;}.waves span:nth-child(6){animation-delay:.25s;}
+.waves span:nth-child(7){animation-delay:.15s;}
+@keyframes wave{ 0%,100%{height:10px;} 50%{height:40px;} }
+
+/* =========================================================
+   RESTAURANT PROFILE SCREEN
+========================================================= */
+.topnav{ display:flex; align-items:center; gap:12px; padding:6px 16px 12px; flex:none; position:relative; z-index:20; }
+.iconbtn{ width:42px; height:42px; border-radius:13px; background:#fff; border:none; display:grid; place-items:center; box-shadow:var(--shadow-sm); cursor:pointer; flex:none; font-size:18px; color:var(--ink); }
+.iconbtn:active{ transform:scale(.9); }
+.topnav .title{ font-weight:800; font-size:17px; flex:1; }
+.topnav .rate{ color:var(--muted); font-weight:700; font-size:14px; display:flex; align-items:center; gap:4px; }
+.topnav .rate .star{ color:#F5A623; }
+.hero{ height:185px; margin:0 16px; border-radius:22px; position:relative; overflow:hidden;
+  background:linear-gradient(135deg,#9ec9ff,#7eb3f5); display:grid; place-items:center; box-shadow:var(--shadow); }
+.hero .pattern{ position:absolute; inset:0; opacity:.45; background-image:radial-gradient(circle at 50% 100%, transparent 58%, #fff 60%); background-size:30px 15px; }
+.hero .emoji{ font-size:76px; z-index:2; filter:drop-shadow(0 6px 10px rgba(0,0,0,.2)); }
+.rdetail{ padding:18px 22px 0; }
+.rdetail h1{ font-family:var(--display); font-size:30px; font-weight:900; letter-spacing:-.5px; }
+.rdetail .sub{ display:flex; align-items:center; gap:14px; color:var(--muted); font-weight:700; font-size:13.5px; margin-top:7px; flex-wrap:wrap; }
+.rdetail .sub .star{ color:#F5A623; }
+.callout{ margin:18px 22px 0; background:var(--lavender); border-left:5px solid var(--purple); border-radius:0 16px 16px 0;
+  padding:15px 16px; font-size:14px; line-height:1.55; color:#3b3d63; font-weight:500; box-shadow:var(--shadow-sm); }
+.menu-h{ font-weight:800; font-size:13px; letter-spacing:1.5px; color:var(--purple); margin:24px 22px 10px; }
+.dishrow{ display:flex; align-items:center; gap:14px; margin:0 22px 12px; padding:11px 12px; border-radius:18px; background:#fff; box-shadow:var(--shadow-sm); cursor:pointer; transition:transform .14s; }
+.dishrow:active{ transform:scale(.98); }
+.dishrow .demoji{ width:54px; height:54px; border-radius:14px; background:var(--bg); display:grid; place-items:center; font-size:30px; flex:none; }
+.dishrow .dinfo{ flex:1; }
+.dishrow .dinfo .dn{ font-weight:800; font-size:15px; }
+.dishrow .dinfo .do{ font-size:12px; color:var(--muted); font-weight:600; margin-top:2px; }
+.dishrow .price{ font-weight:900; color:var(--coral); font-size:17px; }
+
+/* =========================================================
+   DISH CUSTOMISE SCREEN
+========================================================= */
+.dish-hero{ height:200px; margin:0 16px; border-radius:22px; overflow:hidden; position:relative; background:linear-gradient(135deg,#c98a5e,#9c5a3c); display:grid; place-items:center; box-shadow:var(--shadow); }
+.dish-hero .emoji{ font-size:88px; filter:drop-shadow(0 8px 14px rgba(0,0,0,.3)); }
+.dish-body{ padding:18px 22px 0; }
+.dish-body h1{ font-family:var(--display); font-size:27px; font-weight:900; }
+.dish-body .origin{ color:var(--muted); font-weight:700; font-size:13.5px; margin-top:5px; }
+.sect-label{ display:flex; align-items:center; gap:8px; font-weight:800; font-size:13px; letter-spacing:1.2px; color:var(--purple); margin:24px 0 14px; }
+.spice-track{ height:14px; border-radius:8px; position:relative; cursor:pointer; background:linear-gradient(90deg,#7ED957,#F5C542 50%,#FF4D4D); box-shadow:inset 0 1px 3px rgba(0,0,0,.18); touch-action:none; }
+.spice-thumb{ position:absolute; top:50%; left:0%; width:30px; height:30px; border-radius:50%; background:#fff; border:3px solid var(--coral); transform:translate(-50%,-50%); box-shadow:var(--shadow); transition:left .08s; }
+.spice-val{ text-align:center; margin-top:16px; font-weight:800; font-size:14px; color:var(--ink); }
+.qty-row{ display:flex; align-items:center; gap:22px; margin-top:8px; }
+.qbtn{ width:52px; height:52px; border-radius:16px; background:var(--bg); border:none; font-size:26px; font-weight:700; color:var(--ink); display:grid; place-items:center; cursor:pointer; box-shadow:var(--shadow-sm); transition:transform .12s; }
+.qbtn:active{ transform:scale(.88); background:#e7e7f0; }
+.qty-num{ font-size:24px; font-weight:800; min-width:30px; text-align:center; }
+.extras{ font-size:13px; color:var(--muted); font-weight:600; margin-top:20px; }
+.addcart-zone{ flex:none; padding:14px 16px calc(14px + env(safe-area-inset-bottom)); background:#fff; box-shadow:0 -8px 24px rgba(30,32,71,.08); }
+.addcart{ width:100%; height:56px; border:none; border-radius:18px; background:var(--coral); color:#fff; font-family:var(--body); font-weight:800; font-size:17px; display:flex; align-items:center; justify-content:center; gap:10px; cursor:pointer; box-shadow:0 8px 22px rgba(232,80,63,.45); transition:transform .12s; }
+.addcart:active{ transform:scale(.97); }
+
+/* =========================================================
+   ORDER CONFIRMED SCREEN
+========================================================= */
+.confirm-back{ position:absolute; top:54px; left:18px; z-index:40; width:42px; height:42px; border-radius:13px;
+  background:rgba(255,255,255,.92); border:none; display:grid; place-items:center; font-size:18px; color:var(--ink);
+  box-shadow:var(--shadow-sm); cursor:pointer; }
+.confirm-back:active{ transform:scale(.9); }
+#confirm .cityband{ height:150px; flex:none; position:relative; overflow:hidden; background:linear-gradient(135deg,#5b1a6b,#a01f6e 55%,#d6246a); }
+#confirm .cityband::after{ content:""; position:absolute; inset:0;
+  background:repeating-linear-gradient(90deg,transparent 0 22px,rgba(255,255,255,.06) 22px 24px), repeating-linear-gradient(transparent 0 30px,rgba(255,210,120,.10) 30px 32px); }
+.confirm-body{ flex:1; padding:0 24px 24px; margin-top:-58px; position:relative; z-index:2; display:flex; flex-direction:column; align-items:center; overflow-y:auto; }
+.confirm-body::-webkit-scrollbar{ display:none; }
+.check{ width:104px; height:104px; border-radius:28px; background:#fff; display:grid; place-items:center; box-shadow:var(--shadow), 0 0 0 8px rgba(124,107,245,.18); }
+.check .badge{ width:74px; height:74px; border-radius:22px; background:linear-gradient(135deg,#5FD97B,#34C759); display:grid; place-items:center; box-shadow:0 6px 16px rgba(52,199,89,.4); animation:pop .5s cubic-bezier(.2,1.4,.4,1); }
+@keyframes pop{ 0%{transform:scale(0);} 100%{transform:scale(1);} }
+.check .badge svg{ width:38px; height:38px; }
+.confirm-body h1{ font-family:var(--display); font-size:30px; font-weight:900; margin-top:18px; }
+.confirm-body .msg{ text-align:center; color:var(--coral); font-weight:700; font-size:14.5px; margin-top:8px; line-height:1.5; }
+.summary{ width:100%; background:#fff; border-radius:20px; padding:18px 20px; margin-top:22px; box-shadow:var(--shadow-sm); }
+.summary .line{ display:flex; justify-content:space-between; font-size:14.5px; font-weight:600; color:#444; padding:6px 0; }
+.summary .div{ height:1px; background:var(--line); margin:8px 0; }
+.summary .total{ display:flex; justify-content:space-between; font-weight:900; font-size:18px; color:var(--ink); }
+.haptic-badge{ margin-top:18px; background:var(--lavender); border:1.5px solid var(--periwinkle); color:var(--purple-deep); border-radius:12px; padding:9px 18px; font-size:13px; font-weight:700; display:flex; align-items:center; gap:8px; }
+.cta-stack{ width:100%; margin-top:18px; display:flex; flex-direction:column; gap:11px; }
+.cta{ width:100%; height:54px; border-radius:17px; font-family:var(--body); font-weight:800; font-size:16px; cursor:pointer; border:none; display:flex; align-items:center; justify-content:center; gap:8px; transition:transform .12s; }
+.cta:active{ transform:scale(.97); }
+.cta.primary{ background:var(--navy); color:#fff; box-shadow:0 8px 20px rgba(43,45,91,.35); }
+.cta.secondary{ background:#fff; color:var(--navy); border:2px solid var(--navy); }
+.stars-row{ display:flex; gap:6px; justify-content:center; margin-top:14px; }
+.stars-row .s{ font-size:32px; cursor:pointer; filter:grayscale(1) opacity(.4); transition:transform .15s, filter .15s; }
+.stars-row .s.lit{ filter:none; }
+.stars-row .s:active{ transform:scale(1.25); }
+
+/* =========================================================
+   LIVE TRACKING SCREEN
+========================================================= */
+.eta-box{ position:absolute; top:62px; right:16px; z-index:30; background:var(--navy); color:#fff; border-radius:16px; padding:11px 18px; text-align:center; box-shadow:var(--shadow); }
+.eta-box .lbl{ font-size:11px; font-weight:700; letter-spacing:1px; opacity:.7; }
+.eta-box .val{ font-size:22px; font-weight:900; font-family:var(--display); }
+.progress-panel{ flex:none; background:#fff; border-radius:24px 24px 0 0; padding:20px 22px calc(22px + env(safe-area-inset-bottom)); box-shadow:0 -10px 30px rgba(30,32,71,.16); position:relative; z-index:20; }
+.pbar{ display:flex; align-items:flex-start; justify-content:space-between; position:relative; margin:6px 6px 0; }
+.pbar .track{ position:absolute; top:13px; left:14px; right:14px; height:4px; background:var(--line); border-radius:3px; }
+.pbar .fill{ position:absolute; top:13px; left:14px; height:4px; background:var(--coral); border-radius:3px; width:0; transition:width 1s ease; }
+.pstage{ display:flex; flex-direction:column; align-items:center; gap:9px; z-index:2; flex:1; }
+.pstage .node{ width:26px; height:26px; border-radius:50%; background:#fff; border:3px solid var(--line); display:grid; place-items:center; transition:all .4s; }
+.pstage.done .node{ background:var(--coral); border-color:var(--coral); }
+.pstage.active .node{ border-color:var(--coral); box-shadow:0 0 0 5px rgba(255,107,92,.2); }
+.pstage .node .dot{ width:9px; height:9px; border-radius:50%; background:#fff; opacity:0; }
+.pstage.done .node .dot{ opacity:1; }
+.pstage label{ font-size:11.5px; font-weight:700; color:var(--muted); text-align:center; }
+.pstage.active label{ color:var(--coral); } .pstage.done label{ color:var(--ink); }
+
+/* =========================================================
+   ARRIVAL SCREEN
+========================================================= */
+#arrival{ background:radial-gradient(circle at 50% 35%,#FF7A4D,#FF5A3C 70%); }
+.arrival-wrap{ flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:0 30px; }
+.bell{ font-size:96px; animation:ring 1s ease-in-out infinite; filter:drop-shadow(0 8px 18px rgba(0,0,0,.25)); }
+@keyframes ring{ 0%,100%{transform:rotate(0);} 20%{transform:rotate(16deg);} 40%{transform:rotate(-13deg);} 60%{transform:rotate(8deg);} 80%{transform:rotate(-5deg);} }
+.buzz-line{ height:3px; width:60px; background:rgba(255,255,255,.6); border-radius:3px; margin:8px 0; animation:buzzgrow .9s ease-in-out infinite alternate; }
+@keyframes buzzgrow{ from{width:60px;} to{width:200px;} }
+.arrival-wrap h1{ font-family:var(--display); font-size:38px; font-weight:900; color:#fff; text-align:center; line-height:1.1; margin:14px 0; letter-spacing:-.5px; }
+.vibe-badge{ background:rgba(0,0,0,.28); color:#fff; border-radius:999px; padding:9px 20px; font-size:13px; font-weight:700; display:flex; align-items:center; gap:8px; margin-top:10px; }
+.arrival-cta{ margin-top:30px; background:#fff; color:var(--coral); border:none; border-radius:17px; padding:16px 36px; font-family:var(--body); font-weight:800; font-size:16px; cursor:pointer; box-shadow:var(--shadow); }
+.arrival-cta:active{ transform:scale(.96); }
+
+/* =========================================================
+   FEEDBACK + TOAST  (buzz overlay = cross-platform haptic)
+========================================================= */
+#buzz{ position:absolute; inset:0; z-index:8000; pointer-events:none; opacity:0; }
+#buzz.go{ animation:buzzflash .42s ease-out; }
+@keyframes buzzflash{ 0%{opacity:0;} 15%{opacity:1; box-shadow:inset 0 0 0 6px rgba(255,107,92,.55);} 100%{opacity:0; box-shadow:inset 0 0 0 0 rgba(255,107,92,0);} }
+.phone.shake{ animation:shake .4s cubic-bezier(.36,.07,.19,.97); }
+@keyframes shake{ 10%,90%{transform:translateX(-1px);} 20%,80%{transform:translateX(2px);} 30%,50%,70%{transform:translateX(-4px);} 40%,60%{transform:translateX(4px);} }
+.toast{ position:absolute; bottom:34px; left:50%; transform:translateX(-50%) translateY(20px); background:var(--navy); color:#fff;
+  padding:13px 22px; border-radius:14px; font-size:14px; font-weight:700; box-shadow:var(--shadow); opacity:0;
+  transition:all .3s; z-index:9000; pointer-events:none; white-space:nowrap; max-width:90%; }
+.toast.show{ opacity:1; transform:translateX(-50%) translateY(0); }
+
+/* =========================================================
+   FACILITATOR LOG PANEL (for usability testing)
+========================================================= */
+.log-toggle{ position:fixed; bottom:14px; right:14px; z-index:99999; background:var(--navy); color:#fff; border:none; border-radius:50%; width:50px; height:50px; font-size:20px; cursor:pointer; box-shadow:var(--shadow); }
+.log-panel{ position:fixed; inset:0; background:rgba(20,20,35,.97); z-index:99998; display:none; flex-direction:column; padding:24px; color:#fff; font-family:var(--body); overflow-y:auto; }
+.log-panel.show{ display:flex; }
+.log-panel h2{ font-family:var(--display); font-size:26px; margin-bottom:4px; }
+.log-panel .subt{ color:#aaa; font-size:13px; margin-bottom:18px; }
+.log-panel .row{ display:flex; gap:10px; flex-wrap:wrap; margin-bottom:18px; }
+.log-panel button{ background:var(--coral); color:#fff; border:none; border-radius:10px; padding:11px 16px; font-family:var(--body); font-weight:700; font-size:13px; cursor:pointer; }
+.log-panel button.ghost{ background:rgba(255,255,255,.12); }
+.log-panel table{ width:100%; border-collapse:collapse; font-size:12px; margin-top:10px; }
+.log-panel th,.log-panel td{ text-align:left; padding:7px 8px; border-bottom:1px solid rgba(255,255,255,.12); }
+.log-panel th{ color:var(--coral); font-size:11px; letter-spacing:.5px; text-transform:uppercase; }
+.log-panel .statgrid{ display:grid; grid-template-columns:1fr 1fr; gap:10px; margin:14px 0; }
+.log-panel .statcard{ background:rgba(255,255,255,.08); border-radius:12px; padding:14px; }
+.log-panel .statcard .k{ font-size:11px; color:#aaa; text-transform:uppercase; letter-spacing:.5px; }
+.log-panel .statcard .v{ font-size:24px; font-weight:800; font-family:var(--display); margin-top:4px; }
+.log-panel .closebtn{ position:absolute; top:18px; right:18px; background:rgba(255,255,255,.12); width:40px; height:40px; border-radius:50%; font-size:18px; }
+</style>
+</head>
+<body>
+<div class="phone" id="phone">
+  <div class="notch"></div>
+  <div class="screen-host" id="host">
+
+    <!-- ============ WELCOME ============ -->
+    <section class="screen active" id="welcome">
+      <div class="welcome-wrap">
+        <div class="big">🍜</div>
+        <h1>UmamiGo<span>Asian food, delivered</span></h1>
+        <p>Functional prototype — Interactive Multimedia Applications, ISEL 2025/2026.<br>Enter a participant ID to begin a logged session.</p>
+        <input class="pid-input" id="pidInput" placeholder="e.g. P1" maxlength="12" autocomplete="off">
+        <button class="welcome-cta" onclick="startSession()">Start →</button>
+      </div>
+    </section>
+
+    <!-- ============ HOME MAP ============ -->
+    <section class="screen" id="home">
+      <div class="statusbar light"><span class="clk">9:41</span><div class="right"><span class="bars"><i></i><i></i><i></i><i></i></span><span>5G</span><span class="batt"><i></i></span></div></div>
+
+      <!-- draggable map: the .map-pan layer slides under the finger -->
+      <div class="map" id="map">
+        <div class="map-pan" id="mapPan">
+          <svg viewBox="0 0 620 760" preserveAspectRatio="xMidYMid slice">
+            <rect width="620" height="760" fill="#e9eef3"/>
+            <!-- river Tejo in the lower corner -->
+            <path d="M0 700 Q200 660 400 700 T620 690 L620 760 L0 760 Z" fill="#bcd9ec"/>
+            <!-- city blocks -->
+            <rect class="block" x="40" y="90"  width="150" height="110" rx="8"/>
+            <rect class="block" x="240" y="70"  width="160" height="130" rx="8"/>
+            <rect class="block" x="450" y="100" width="140" height="120" rx="8"/>
+            <rect class="park"  x="60" y="470" width="170" height="140" rx="14"/>
+            <rect class="block" x="280" y="450" width="150" height="130" rx="8"/>
+            <rect class="block" x="460" y="430" width="130" height="120" rx="8"/>
+            <rect class="block" x="100" y="270" width="120" height="110" rx="8"/>
+            <rect class="block" x="290" y="270" width="120" height="100" rx="8"/>
+            <rect class="block" x="450" y="270" width="120" height="100" rx="8"/>
+            <!-- avenues (named, fully inside the view) -->
+            <path class="road big" d="M-20 230 L640 205"/>
+            <path class="road big" d="M-20 420 L640 445"/>
+            <path class="road med" d="M230 -20 L260 640"/>
+            <path class="road med" d="M70 60 L100 660"/>
+            <path class="road med" d="M430 40 L460 660"/>
+            <path class="road sm"  d="M-20 330 L640 315"/>
+            <path class="road sm"  d="M-20 540 L640 560"/>
+            <!-- street labels -->
+            <text class="map-label" x="250" y="195">Av. da Liberdade</text>
+            <text class="map-label" x="80"  y="255">R. das Portas de Santo Antão</text>
+            <text class="map-label" x="300" y="255">Pç. Marquês de Pombal</text>
+            <text class="map-label" x="470" y="255">Av. Almirante Reis</text>
+            <text class="map-label" x="90"  y="455">Pç. do Rossio</text>
+            <text class="map-label" x="300" y="435">R. Augusta</text>
+            <text class="map-label" x="470" y="415">Alfama</text>
+            <text class="map-label" x="250" y="690">Rio Tejo</text>
+          </svg>
+          <!-- pins + home icon live inside the pan layer so they move with the map -->
+          <div id="mapPins"></div>
+          <!-- user's home: click to recenter the map on it -->
+          <div class="pin home" id="homePin" style="left:50%;top:60%;" onclick="centerOnHome()">
+            <svg viewBox="0 0 40 40"><circle cx="20" cy="20" r="19" fill="#3A3A8C"/><path d="M12 20l8-7 8 7M14 19v8h12v-8" stroke="#fff" stroke-width="2.3" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </div>
+        </div>
+      </div>
+
+      <div class="home-top">
+        <div class="brand"><div class="logo">🍜</div><b>UMAMI<span>GO</span></b></div>
+        <div class="searchbar">
+          <span class="mag">🔍</span>
+          <input placeholder="Search for Asian food…" readonly onclick="openVoice()">
+          <button class="mic-fab" onclick="openVoice()" aria-label="Voice search">
+            <svg viewBox="0 0 24 24" fill="none"><rect x="9" y="3" width="6" height="11" rx="3" fill="#fff"/><path d="M6 11a6 6 0 0 0 12 0M12 17v4M8 21h8" stroke="#fff" stroke-width="2" stroke-linecap="round"/></svg>
+          </button>
+        </div>
+        <div class="chips" id="chips"></div>
+      </div>
+
+      <!-- bottom sheet: drag the header (handle + title) up to expand, down to peek -->
+      <div class="sheet" id="sheet">
+        <div class="sheet-header" id="sheetHeader">
+          <div class="handle"></div>
+          <h3><span id="sheetTitle">Nearby restaurants</span><span class="count" id="sheetCount"></span></h3>
+        </div>
+        <div class="sheet-list" id="sheetCards"></div>
+      </div>
+    </section>
+
+    <!-- ============ VOICE SEARCH ============ -->
+    <section class="screen" id="voice">
+      <div class="statusbar light"><span class="clk">9:41</span><div class="right"><span class="bars"><i></i><i></i><i></i><i></i></span><span>5G</span><span class="batt"><i></i></span></div></div>
+      <div class="voice-wrap">
+        <button class="voice-back" onclick="closeVoice()">‹ Back</button>
+        <div class="mic-stage">
+          <div class="ring r1"></div><div class="ring r2"></div>
+          <div class="mic-big" id="micBig" onclick="doVoice()">
+            <svg viewBox="0 0 24 24" fill="none"><rect x="9" y="3" width="6" height="11" rx="3" fill="#FF6B5C"/><path d="M6 11a6 6 0 0 0 12 0M12 17v4M8 21h8" stroke="#FF6B5C" stroke-width="2" stroke-linecap="round"/></svg>
+          </div>
+        </div>
+        <div class="heard" id="heard"></div>
+        <div class="ghost-hint" id="ghost">Tap the mic and say “spicy ramen near me”</div>
+        <div class="waves" id="waves"><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div>
+      </div>
+    </section>
+
+    <!-- ============ RESTAURANT PROFILE ============ -->
+    <section class="screen" id="restaurant">
+      <div class="statusbar"><span class="clk">9:41</span><div class="right"><span class="bars"><i></i><i></i><i></i><i></i></span><span>5G</span><span class="batt"><i></i></span></div></div>
+      <div class="scroll">
+        <div class="topnav">
+          <button class="iconbtn" onclick="back('home')">←</button>
+          <div class="title" id="rName">Sakura Ramen</div>
+          <div class="rate"><span id="rFlag">🇯🇵</span><span class="star">★</span><span id="rRate">4.8</span></div>
+        </div>
+        <div class="hero"><div class="pattern"></div><div class="emoji" id="rEmoji">🍜</div></div>
+        <div class="rdetail">
+          <h1 id="rName2">Sakura Ramen</h1>
+          <div class="sub"><span id="rLoc">🇯🇵 Osaka, Japan</span><span class="star">★ <span id="rRate2">4.8</span></span><span>🕒 12 min</span></div>
+        </div>
+        <div class="callout" id="rDesc"></div>
+        <div class="menu-h">MENU</div>
+        <div id="menuList"></div>
+        <div style="height:24px"></div>
+      </div>
+    </section>
+
+    <!-- ============ DISH CUSTOMISE ============ -->
+    <section class="screen" id="dish">
+      <div class="statusbar"><span class="clk">9:41</span><div class="right"><span class="bars"><i></i><i></i><i></i><i></i></span><span>5G</span><span class="batt"><i></i></span></div></div>
+      <div class="scroll">
+        <div class="topnav">
+          <button class="iconbtn" onclick="back('restaurant')">←</button>
+          <div class="title" id="dName">Tonkotsu Ramen</div>
+          <div class="rate"><span class="star">★</span><span id="dRate">4.8</span></div>
+        </div>
+        <div class="dish-hero"><div class="emoji" id="dEmoji">🍜</div></div>
+        <div class="dish-body">
+          <h1 id="dName2">Tonkotsu Ramen</h1>
+          <div class="origin" id="dOrigin">🇯🇵 Fukuoka, Japan — Rich pork broth</div>
+          <div class="sect-label">🌶️ SPICE LEVEL</div>
+          <div class="spice-track" id="spiceTrack"><div class="spice-thumb" id="spiceThumb"></div></div>
+          <div class="spice-val" id="spiceVal">Mild</div>
+          <div class="sect-label">QUANTITY</div>
+          <div class="qty-row">
+            <button class="qbtn" onclick="changeQty(-1)">−</button>
+            <span class="qty-num" id="qtyNum">1</span>
+            <button class="qbtn" onclick="changeQty(1)">+</button>
+          </div>
+          <div class="extras">＋ Extra toppings: Soft egg +1€</div>
+          <div style="height:24px"></div>
+        </div>
+      </div>
+      <div class="addcart-zone">
+        <button class="addcart" onclick="addToCart()">🛒 <span id="addLabel">Add to Cart · 12€</span></button>
+      </div>
+    </section>
+
+    <!-- ============ ORDER CONFIRMED ============ -->
+    <section class="screen" id="confirm">
+      <button class="confirm-back" onclick="goHome()" aria-label="Back to home">←</button>
+      <div class="cityband"></div>
+      <div class="confirm-body">
+        <div class="check"><div class="badge"><svg viewBox="0 0 24 24" fill="none"><path d="M5 13l4 4 10-11" stroke="#fff" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/></svg></div></div>
+        <h1>Order Confirmed!</h1>
+        <div class="msg">Your food is being prepared<br><span id="cookLine">Sakura Ramen is cooking</span></div>
+        <div class="summary">
+          <div class="line"><span id="cItem">Tonkotsu Ramen ×1</span><span id="cItemP">12€</span></div>
+          <div class="line"><span>Delivery fee</span><span>1.99€</span></div>
+          <div class="div"></div>
+          <div class="total"><span>Total</span><span id="cTotal">13.99€</span></div>
+        </div>
+        <div class="haptic-badge">📳 Phone vibrated on confirm</div>
+        <div class="cta-stack">
+          <button class="cta primary" onclick="goTracking()">Track my order →</button>
+          <button class="cta secondary" onclick="toggleRate()">Rate this order</button>
+        </div>
+        <div class="stars-row" id="starsRow" style="display:none">
+          <span class="s" data-v="1" onclick="rate(1)">⭐</span>
+          <span class="s" data-v="2" onclick="rate(2)">⭐</span>
+          <span class="s" data-v="3" onclick="rate(3)">⭐</span>
+          <span class="s" data-v="4" onclick="rate(4)">⭐</span>
+          <span class="s" data-v="5" onclick="rate(5)">⭐</span>
+        </div>
+        <button class="cta primary" id="homeAfterRate" style="display:none;margin-top:16px" onclick="goHome()">← Back to Home</button>
+        <div style="height:20px"></div>
+      </div>
+    </section>
+
+    <!-- ============ LIVE TRACKING ============ -->
+    <section class="screen" id="tracking">
+      <div class="statusbar"><span class="clk">9:41</span><div class="right"><span class="bars"><i></i><i></i><i></i><i></i></span><span>5G</span><span class="batt"><i></i></span></div></div>
+
+      <!-- Tracking map: everything (streets, route, pins, rider) lives in ONE
+           SVG with the same 0..390 x 0..844 coordinate system, so the route line
+           connects exactly to the restaurant pin and the home pin. -->
+      <div class="map">
+        <svg id="trackSvg" viewBox="0 0 390 844" preserveAspectRatio="xMidYMid slice" style="width:100%;height:100%;display:block;">
+          <rect width="390" height="844" fill="#e9eef3"/>
+          <!-- blocks / park -->
+          <rect class="block" x="20" y="150" width="120" height="100" rx="7"/>
+          <rect class="block" x="250" y="130" width="130" height="120" rx="7"/>
+          <rect class="park"  x="30" y="560" width="150" height="150" rx="12"/>
+          <rect class="block" x="240" y="540" width="140" height="130" rx="7"/>
+          <rect class="block" x="60" y="360" width="100" height="90" rx="7"/>
+          <rect class="block" x="250" y="370" width="120" height="90" rx="7"/>
+          <!-- roads -->
+          <path class="road big" d="M-10 280 L400 255"/>
+          <path class="road big" d="M-10 510 L400 540"/>
+          <path class="road med" d="M150 0 L175 844"/>
+          <path class="road med" d="M70 120 L95 800"/>
+          <path class="road sm"  d="M300 120 L325 800"/>
+          <!-- street labels (kept inside the view so they don't get cut) -->
+          <text class="map-label" x="225" y="240">R. Pascoal de Melo</text>
+          <text class="map-label" x="235" y="262">Santa Cruz</text>
+          <text class="map-label" x="40"  y="500">Marquês de Pombal</text>
+          <text class="map-label" x="215" y="470">Av. da Liberdade</text>
+
+          <!-- route: from restaurant (110,250) to home (250,640) -->
+          <path id="trackRoute" d="M110 250 Q150 380 185 450 T250 640"
+                stroke="#FF6B5C" stroke-width="3.5" stroke-dasharray="9 8" fill="none" stroke-linecap="round"/>
+
+          <!-- restaurant pin at the route start -->
+          <g transform="translate(110,250)">
+            <path fill="#FF6B5C" transform="translate(-15,-37)" d="M15 0C7 0 1 6 1 14c0 10 14 23 14 23s14-13 14-23C29 6 23 0 15 0z" filter="drop-shadow(0 5px 6px rgba(232,80,63,.4))"/>
+            <circle cx="0" cy="-23" r="5.5" fill="#fff"/>
+          </g>
+
+          <!-- home pin at the route end -->
+          <g transform="translate(250,640)">
+            <circle cx="0" cy="0" r="18" fill="#3A3A8C" filter="drop-shadow(0 4px 6px rgba(0,0,0,.25))"/>
+            <path d="M-8 1l8-7 8 7M-6 0v8h12v-8" stroke="#fff" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+          </g>
+
+          <!-- rider: an SVG group we move along the route in JS -->
+          <g id="riderG" transform="translate(110,250)">
+            <circle cx="0" cy="0" r="17" fill="#FF6B5C" stroke="#fff" stroke-width="3" filter="drop-shadow(0 5px 8px rgba(232,80,63,.5))"/>
+            <text x="0" y="6" font-size="18" text-anchor="middle">🛵</text>
+          </g>
+        </svg>
+      </div>
+
+      <div class="eta-box"><div class="lbl">ETA</div><div class="val" id="etaVal">12 min</div></div>
+      <div style="flex:1"></div>
+      <div class="progress-panel">
+        <div class="pbar" id="pbar">
+          <div class="track"></div><div class="fill" id="pfill"></div>
+          <div class="pstage" data-s="0"><div class="node"><div class="dot"></div></div><label>Confirmed</label></div>
+          <div class="pstage" data-s="1"><div class="node"><div class="dot"></div></div><label>Cooking</label></div>
+          <div class="pstage" data-s="2"><div class="node"><div class="dot"></div></div><label>On the way</label></div>
+          <div class="pstage" data-s="3"><div class="node"><div class="dot"></div></div><label>Arrived</label></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ ARRIVAL ============ -->
+    <section class="screen" id="arrival">
+      <div class="statusbar light"><span class="clk">9:41</span><div class="right"><span class="bars"><i></i><i></i><i></i><i></i></span><span>5G</span><span class="batt"><i></i></span></div></div>
+      <div class="arrival-wrap">
+        <div class="bell">🔔</div>
+        <div class="buzz-line"></div>
+        <h1>YOUR ORDER<br>IS HERE!</h1>
+        <div class="buzz-line"></div>
+        <div class="vibe-badge">📳 Strong vibration pulse</div>
+        <button class="arrival-cta" onclick="finishFlow()">Rate your meal ⭐</button>
+      </div>
+    </section>
+
+    <div id="buzz"></div>
+    <div class="toast" id="toast"></div>
+  </div>
+</div>
+
+<!-- Facilitator log panel -->
+<button class="log-toggle" onclick="openLogs()" title="Facilitator logs">📊</button>
+<div class="log-panel" id="logPanel">
+  <button class="log-toggle closebtn" style="position:absolute" onclick="closeLogs()">✕</button>
+  <h2>Interaction Logs</h2>
+  <div class="subt">UmamiGo usability testing — facilitator view</div>
+  <div class="row">
+    <button onclick="renderStats()">↻ Refresh stats</button>
+    <button class="ghost" onclick="downloadCSV()">⬇ CSV</button>
+    <button class="ghost" onclick="downloadJSON()">⬇ JSON</button>
+    <button class="ghost" onclick="copyStats()">📋 Copy summary</button>
+    <button class="ghost" style="background:#7a2a2a" onclick="wipeLogs()">🗑 Clear all</button>
+  </div>
+  <div id="statsArea"></div>
+</div>
+
+<script>
+"use strict";
+/* =========================================================
+   UmamiGo app logic.
+   Order: data -> screen switching -> each screen's features
+   -> feedback helpers -> usability logging. One file, no build step.
+========================================================= */
+
+/* ---------- 1. DATA ---------- */
+// The five cuisine filters shown as chips.
+const CUISINES = [
+  { c:"JP", flag:"🇯🇵", label:"JP", name:"Japanese" },
+  { c:"KR", flag:"🇰🇷", label:"KR", name:"Korean" },
+  { c:"CN", flag:"🇨🇳", label:"CN", name:"Chinese" },
+  { c:"TH", flag:"🇹🇭", label:"TH", name:"Thai" },
+  { c:"VN", flag:"🇻🇳", label:"VN", name:"Vietnamese" },
+];
+
+// Restaurants. Each has a cuisine code, map position [x%, y%], and a small menu.
+const RESTAURANTS = {
+  sakura:{ c:"JP", name:"Sakura Ramen", flag:"🇯🇵", rate:"4.8", eta:"12 min", emoji:"🍜", loc:"🇯🇵 Osaka, Japan", pin:[30,38],
+    desc:"Tonkotsu — born in Fukuoka in 1940, a rich pork-bone broth simmered 18 hours. Deeply savoury and warming.",
+    menu:[ {n:"Tonkotsu Ramen",o:"🇯🇵 Fukuoka, Japan",sub:"Rich pork broth",p:12,e:"🍜"},
+           {n:"Shoyu Ramen",o:"🇯🇵 Tokyo, Japan",sub:"Soy-based broth",p:11,e:"🍥"},
+           {n:"Gyoza (6)",o:"🇯🇵 Japan",sub:"Pan-fried dumplings",p:6,e:"🥟"} ] },
+  tokyobowl:{ c:"JP", name:"Tokyo Bowl", flag:"🇯🇵", rate:"4.5", eta:"22 min", emoji:"🍱", loc:"🇯🇵 Tokyo, Japan", pin:[60,30],
+    desc:"Donburi rice bowls and fresh sushi sets, made to order in a tiny Shibuya-style kitchen.",
+    menu:[ {n:"Chicken Katsu Don",o:"🇯🇵 Tokyo, Japan",sub:"Rice bowl",p:11,e:"🍱"},
+           {n:"Salmon Nigiri (8)",o:"🇯🇵 Japan",sub:"Fresh sushi",p:13,e:"🍣"},
+           {n:"Miso Soup",o:"🇯🇵 Japan",sub:"Tofu & seaweed",p:4,e:"🥣"} ] },
+  kimchi:{ c:"KR", name:"Kimchi House", flag:"🇰🇷", rate:"4.6", eta:"18 min", emoji:"🍲", loc:"🇰🇷 Seoul, Korea", pin:[52,55],
+    desc:"Kimchi jjigae — a fermented cabbage stew, tangy and deeply spicy, a staple of Korean home cooking.",
+    menu:[ {n:"Kimchi Jjigae",o:"🇰🇷 Seoul, Korea",sub:"Fermented stew",p:13,e:"🍲"},
+           {n:"Bibimbap",o:"🇰🇷 Korea",sub:"Mixed rice bowl",p:12,e:"🍚"},
+           {n:"Tteokbokki",o:"🇰🇷 Korea",sub:"Spicy rice cakes",p:9,e:"🌶️"} ] },
+  seoulbbq:{ c:"KR", name:"Seoul BBQ", flag:"🇰🇷", rate:"4.7", eta:"25 min", emoji:"🥩", loc:"🇰🇷 Busan, Korea", pin:[40,68],
+    desc:"Korean barbecue plates with bulgogi and all the classic banchan side dishes.",
+    menu:[ {n:"Bulgogi Beef",o:"🇰🇷 Korea",sub:"Marinated grill",p:15,e:"🥩"},
+           {n:"Japchae",o:"🇰🇷 Korea",sub:"Glass noodles",p:11,e:"🍜"},
+           {n:"Kimchi Pancake",o:"🇰🇷 Korea",sub:"Crispy savoury",p:8,e:"🥞"} ] },
+  golden:{ c:"CN", name:"Golden Wok", flag:"🇨🇳", rate:"4.7", eta:"15 min", emoji:"🥡", loc:"🇨🇳 Sichuan, China", pin:[72,44],
+    desc:"Mapo tofu — silky tofu in a fiery Sichuan sauce of doubanjiang and numbing peppercorns.",
+    menu:[ {n:"Mapo Tofu",o:"🇨🇳 Sichuan, China",sub:"Spicy silky tofu",p:11,e:"🥘"},
+           {n:"Dim Sum (8)",o:"🇨🇳 Canton, China",sub:"Steamed assortment",p:14,e:"🥟"},
+           {n:"Kung Pao Chicken",o:"🇨🇳 Sichuan, China",sub:"Peanuts & chilli",p:12,e:"🍗"} ] },
+  bangkok:{ c:"TH", name:"Bangkok Street", flag:"🇹🇭", rate:"4.9", eta:"20 min", emoji:"🍛", loc:"🇹🇭 Bangkok, Thailand", pin:[34,60],
+    desc:"Pad Thai — stir-fried rice noodles with tamarind, peanuts and lime, the icon of Thai street food.",
+    menu:[ {n:"Pad Thai",o:"🇹🇭 Bangkok, Thailand",sub:"Tamarind noodles",p:11,e:"🍜"},
+           {n:"Green Curry",o:"🇹🇭 Thailand",sub:"Coconut & basil",p:13,e:"🍛"},
+           {n:"Tom Yum Soup",o:"🇹🇭 Thailand",sub:"Hot & sour",p:10,e:"🍲"} ] },
+  pho:{ c:"VN", name:"Phở Saigon", flag:"🇻🇳", rate:"4.8", eta:"16 min", emoji:"🍲", loc:"🇻🇳 Hanoi, Vietnam", pin:[22,64],
+    desc:"Phở bò — a clear beef broth simmered with star anise and cinnamon, served with rice noodles and herbs.",
+    menu:[ {n:"Phở Bò",o:"🇻🇳 Hanoi, Vietnam",sub:"Beef noodle soup",p:12,e:"🍲"},
+           {n:"Bánh Mì",o:"🇻🇳 Saigon, Vietnam",sub:"Baguette sandwich",p:8,e:"🥖"},
+           {n:"Gỏi Cuốn (4)",o:"🇻🇳 Vietnam",sub:"Fresh spring rolls",p:7,e:"🥬"} ] },
+};
+
+// Current selections shared across screens.
+let activeCuisine = null;     // which chip is selected (null = all)
+let openRestaurant = "sakura";
+let chosenDish = null;
+let quantity = 1;
+let spiceLevel = 0;           // 0..3
+const SPICE_NAMES = ["Mild","Medium","Hot","Extra Hot"];
+
+
+/* ---------- 2. SCREEN SWITCHING ---------- */
+let currentScreen = "welcome";
+function go(id){
+  const from = document.getElementById(currentScreen);
+  const to   = document.getElementById(id);
+  if (from && from !== to){
+    from.classList.remove("active");
+    from.classList.add("leaving");
+    setTimeout(() => from.classList.remove("leaving"), 340);
+  }
+  to.classList.add("active");
+  // reset any scroll position on the new screen
+  const sc = to.querySelector(".scroll") || to.querySelector(".confirm-body");
+  if (sc) sc.scrollTop = 0;
+  currentScreen = id;
+  logEvent("screen", { screen:id });
+}
+function back(id){ go(id); }
+// Return to the home map (used by the Order Confirmed back button).
+function goHome(){
+  go("home");
+  setSheet("peek");
+  buzz("soft");
+  // reset the confirm screen so the next order starts fresh
+  document.getElementById("starsRow").style.display = "none";
+  document.getElementById("homeAfterRate").style.display = "none";
+  document.querySelectorAll("#starsRow .s").forEach(s => s.classList.remove("lit"));
+}
+
+
+/* ---------- 3. HOME: build chips, pins, and the list ---------- */
+function buildChips(){
+  const wrap = document.getElementById("chips");
+  wrap.innerHTML = "";
+  CUISINES.forEach(cu => {
+    const el = document.createElement("div");
+    el.className = "chip";
+    el.innerHTML = cu.flag + " " + cu.label + '<span class="dot"></span>';
+    el.onclick = () => selectCuisine(el, cu);
+    wrap.appendChild(el);
+  });
+  enableChipCarousel();
+}
+
+// Make the cuisine strip a carousel: it slides left/right with the finger
+// (or mouse drag on desktop). A real drag suppresses the chip's click so you
+// don't accidentally select a cuisine while swiping.
+function enableChipCarousel(){
+  const strip = document.getElementById("chips");
+  let down = false, startX = 0, startScroll = 0, dragged = false;
+
+  strip.addEventListener("pointerdown", e => {
+    down = true; dragged = false;
+    startX = e.clientX;
+    startScroll = strip.scrollLeft;
+    strip.classList.add("dragging");
+  });
+  strip.addEventListener("pointermove", e => {
+    if (!down) return;
+    const dx = e.clientX - startX;
+    if (Math.abs(dx) > 4) dragged = true;     // it's a swipe, not a tap
+    strip.scrollLeft = startScroll - dx;       // follow the finger
+  });
+  function end(){
+    if (!down) return;
+    down = false;
+    strip.classList.remove("dragging");
+  }
+  strip.addEventListener("pointerup", end);
+  strip.addEventListener("pointercancel", end);
+  strip.addEventListener("pointerleave", end);
+  // if the user dragged, cancel the click so no chip gets selected mid-swipe
+  strip.addEventListener("click", e => { if (dragged){ e.stopPropagation(); e.preventDefault(); } }, true);
+}
+
+function buildPins(){
+  const wrap = document.getElementById("mapPins");
+  wrap.innerHTML = "";
+  Object.entries(RESTAURANTS).forEach(([id, r]) => {
+    const p = document.createElement("div");
+    p.className = "pin";
+    p.dataset.c = r.c;
+    p.style.left = r.pin[0] + "%";
+    p.style.top  = r.pin[1] + "%";
+    p.onclick = () => openRestaurantProfile(id);
+    p.innerHTML = '<svg viewBox="0 0 36 44"><path fill="#FF6B5C" d="M18 0C8 0 1 7 1 17c0 12 17 27 17 27s17-15 17-27C35 7 28 0 18 0z"/><circle cx="18" cy="17" r="7" fill="#fff"/></svg>';
+    wrap.appendChild(p);
+  });
+}
+
+// Fill the bottom sheet with restaurants matching the active cuisine.
+function renderList(){
+  const list = Object.entries(RESTAURANTS).filter(([id,r]) => !activeCuisine || r.c === activeCuisine);
+  const cards = document.getElementById("sheetCards");
+  const cu = CUISINES.find(x => x.c === activeCuisine);
+  document.getElementById("sheetTitle").textContent = cu ? (cu.name + " restaurants") : "Nearby restaurants";
+  document.getElementById("sheetCount").textContent = list.length + " found";
+
+  cards.style.opacity = 0;
+  setTimeout(() => {
+    if (list.length === 0){
+      cards.innerHTML = '<div class="sheet-empty">No restaurants nearby right now.</div>';
+    } else {
+      cards.innerHTML = list.map(([id,r]) =>
+        '<div class="rcard" onclick="openRestaurantProfile(\'' + id + '\')">' +
+          '<div class="thumb">' + r.emoji + '</div>' +
+          '<div class="info"><div class="name">' + r.name + ' <span>' + r.flag + '</span></div>' +
+          '<div class="meta"><span class="star">★ ' + r.rate + '</span><span>🕒 ' + r.eta + '</span></div></div>' +
+          '<div class="chev">›</div>' +
+        '</div>'
+      ).join("");
+    }
+    cards.style.opacity = 1;
+  }, 140);
+}
+
+// Tap a cuisine chip: filter the list, dim non-matching pins, expand the sheet.
+function selectCuisine(el, cu){
+  const wasActive = el.classList.contains("active");
+  document.querySelectorAll("#chips .chip").forEach(x => x.classList.remove("active"));
+
+  if (wasActive){
+    activeCuisine = null;
+    toast("Showing all cuisines");
+  } else {
+    activeCuisine = cu.c;
+    el.classList.add("active");
+    toast("Showing " + cu.name + " restaurants");
+    setSheet("expanded");   // swipe-up feel: opening a cuisine reveals more
+  }
+
+  document.querySelectorAll("#mapPins .pin").forEach(p => {
+    p.classList.toggle("dim", activeCuisine && p.dataset.c !== activeCuisine);
+  });
+
+  buzz("soft");
+  logEvent("filter", { cuisine:activeCuisine });
+  renderList();
+}
+
+
+/* ---------- 3a. HOME: draggable map + recenter on home ---------- */
+// The map background (.map-pan) is translated by the finger drag.
+// offX/offY track the current pan offset so centerOnHome() can animate to it.
+let mapOffX = 0, mapOffY = 0;
+const MAP_LIMIT = 90; // how far the map can slide, in px
+function mapClamp(v){ return Math.max(-MAP_LIMIT, Math.min(MAP_LIMIT, v)); }
+function applyMapTransform(x, y){
+  document.getElementById("mapPan").style.transform = "translate(" + x + "px," + y + "px)";
+}
+
+(function enableMapDrag(){
+  const map = document.getElementById("map");
+  const pan = document.getElementById("mapPan");
+  let dragging = false, startX = 0, startY = 0;
+
+  map.addEventListener("pointerdown", e => {
+    // ignore drags that start on a pin or the home icon (those are taps)
+    if (e.target.closest(".pin")) return;
+    dragging = true; startX = e.clientX; startY = e.clientY;
+    pan.style.transition = "none";
+    map.setPointerCapture(e.pointerId);
+  });
+  map.addEventListener("pointermove", e => {
+    if (!dragging) return;
+    applyMapTransform(mapClamp(mapOffX + (e.clientX - startX)), mapClamp(mapOffY + (e.clientY - startY)));
+  });
+  function endDrag(e){
+    if (!dragging) return;
+    dragging = false;
+    mapOffX = mapClamp(mapOffX + (e.clientX - startX));
+    mapOffY = mapClamp(mapOffY + (e.clientY - startY));
+    pan.style.transition = "transform .25s ease-out";
+  }
+  map.addEventListener("pointerup", endDrag);
+  map.addEventListener("pointercancel", endDrag);
+})();
+
+// Tap the home icon: smoothly pan the map so the home pin sits in the centre.
+function centerOnHome(){
+  const pan = document.getElementById("mapPan");
+  // home pin is at 50%,60% of the pan layer; nudge the map so it reads centred
+  pan.style.transition = "transform .6s cubic-bezier(.45,.05,.3,1)"; // ease-in-out
+  mapOffX = 0; mapOffY = mapClamp(40);
+  applyMapTransform(mapOffX, mapOffY);
+  buzz("soft");
+  toast("Centred on your location");
+  logEvent("center_home");
+}
+
+
+/* ---------- 3b. HOME: swipe-up bottom sheet ---------- */
+// The sheet slides between two positions using translateY:
+//   0        = expanded (top sits just below the chips, set via --sheet-top)
+//   peekPx() = peeking  (pushed down so only the first cards show)
+// We measure where the chips end so the expanded sheet never hides behind them.
+const SHEET_PEEK = 0.55;        // how much of the sheet to push down when peeking
+let sheetState = "peek";
+
+// Place the sheet's top just below the search bar + chips.
+function positionSheet(){
+  const top = document.querySelector(".home-top");
+  const sheet = document.getElementById("sheet");
+  if (!top || !sheet) return;
+  const host = document.getElementById("host").getBoundingClientRect();
+  const bottom = top.getBoundingClientRect().bottom - host.top + 8; // 8px gap
+  sheet.style.setProperty("--sheet-top", bottom + "px");
+}
+
+function peekPx(){
+  return document.getElementById("sheet").offsetHeight * SHEET_PEEK;
+}
+function setSheet(state){
+  const sheet = document.getElementById("sheet");
+  sheetState = state;
+  sheet.style.transition = "transform .35s cubic-bezier(.25,.9,.3,1)";
+  sheet.style.transform  = "translateY(" + (state === "peek" ? peekPx() : 0) + "px)";
+}
+function toggleSheet(){ setSheet(sheetState === "peek" ? "expanded" : "peek"); }
+
+// Drag handling lives only on the header, so the list below can scroll freely.
+(function enableSheetDrag(){
+  const sheet  = document.getElementById("sheet");
+  const header = document.getElementById("sheetHeader");
+  let dragging = false, startY = 0, baseY = 0, moved = 0;
+
+  header.addEventListener("pointerdown", e => {
+    dragging = true;
+    startY = e.clientY;
+    baseY  = (sheetState === "peek") ? peekPx() : 0;
+    moved  = 0;
+    sheet.style.transition = "none";
+    header.setPointerCapture(e.pointerId);   // keep receiving events even if the finger drifts
+  });
+
+  header.addEventListener("pointermove", e => {
+    if (!dragging) return;
+    moved = e.clientY - startY;               // positive = down, negative = up
+    const y = Math.max(0, Math.min(peekPx(), baseY + moved));
+    sheet.style.transform = "translateY(" + y + "px)";
+  });
+
+  function release(){
+    if (!dragging) return;
+    dragging = false;
+    if (Math.abs(moved) < 6)  toggleSheet();        // barely moved = treat as a tap
+    else if (moved > 0)       setSheet("peek");      // dragged down  -> peek
+    else                      setSheet("expanded");  // dragged up    -> expand
+    logEvent("sheet", { state: sheetState });
+  }
+  header.addEventListener("pointerup", release);
+  header.addEventListener("pointercancel", release);
+})();
+
+
+/* ---------- 4. VOICE SEARCH ---------- */
+function openVoice(){
+  beginTask("T2");
+  document.getElementById("heard").textContent = "";
+  const g = document.getElementById("ghost");
+  g.style.display = "block";
+  g.textContent = 'Tap the mic and say “spicy ramen near me”';
+  go("voice");
+}
+function closeVoice(){ stopWaves(); go("home"); }
+
+let recognition = null;
+function doVoice(){
+  buzz("soft");
+  startWaves();
+  document.getElementById("micBig").classList.add("listening");
+  logEvent("voice_start");
+
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (SR){
+    try{
+      recognition = new SR();
+      recognition.lang = "en-US";
+      recognition.onresult = ev => onHeard(ev.results[0][0].transcript);
+      recognition.onerror  = () => onHeard("spicy ramen near me");
+      recognition.onend    = () => { stopWaves(); document.getElementById("micBig").classList.remove("listening"); };
+      recognition.start();
+      document.getElementById("ghost").textContent = "Listening… speak now";
+      return;
+    } catch(e){ /* fall through to the simulated result below */ }
+  }
+  // If the browser has no speech API (or blocks the mic), simulate a result.
+  document.getElementById("ghost").textContent = "Listening…";
+  setTimeout(() => onHeard("spicy ramen near me"), 1700);
+}
+function onHeard(text){
+  stopWaves();
+  document.getElementById("micBig").classList.remove("listening");
+  document.getElementById("ghost").style.display = "none";
+  document.getElementById("heard").textContent = "“" + text + "”";
+  buzz("double");
+  endTask("T2");
+  logEvent("voice_result", { text:text });
+  setTimeout(() => { toast("Found spicy matches near you"); openRestaurantProfile("sakura"); }, 1000);
+}
+function startWaves(){ document.getElementById("waves").classList.add("on"); }
+function stopWaves(){
+  document.getElementById("waves").classList.remove("on");
+  if (recognition){ try{ recognition.stop(); }catch(e){} }
+}
+
+
+/* ---------- 5. RESTAURANT PROFILE ---------- */
+function openRestaurantProfile(id){
+  openRestaurant = id;
+  const r = RESTAURANTS[id];
+  if (activeTask === "T1") endTask("T1");   // Task 1 done once a restaurant opens
+
+  document.getElementById("rName").textContent  = r.name;
+  document.getElementById("rName2").textContent = r.name;
+  document.getElementById("rFlag").textContent  = r.flag;
+  document.getElementById("rRate").textContent  = r.rate;
+  document.getElementById("rRate2").textContent = r.rate;
+  document.getElementById("rEmoji").textContent = r.emoji;
+  document.getElementById("rLoc").textContent   = r.loc;
+  document.getElementById("rDesc").textContent  = r.desc;
+
+  const menu = document.getElementById("menuList");
+  menu.innerHTML = "";
+  r.menu.forEach((d, i) => {
+    const row = document.createElement("div");
+    row.className = "dishrow";
+    row.onclick = () => openDish(i);
+    row.innerHTML = '<div class="demoji">' + d.e + '</div>' +
+      '<div class="dinfo"><div class="dn">' + d.n + '</div><div class="do">' + d.sub + '</div></div>' +
+      '<div class="price">' + d.p + '€</div>';
+    menu.appendChild(row);
+  });
+
+  buzz("soft");
+  go("restaurant");
+}
+
+
+/* ---------- 6. DISH CUSTOMISE ---------- */
+function openDish(i){
+  beginTask("T3");
+  const r = RESTAURANTS[openRestaurant];
+  chosenDish = r.menu[i];
+  quantity = 1;
+  spiceLevel = 0;
+
+  document.getElementById("dName").textContent   = chosenDish.n;
+  document.getElementById("dName2").textContent  = chosenDish.n;
+  document.getElementById("dRate").textContent   = r.rate;
+  document.getElementById("dEmoji").textContent  = chosenDish.e;
+  document.getElementById("dOrigin").textContent = chosenDish.o + " — " + chosenDish.sub;
+
+  setSpice(0);
+  changeQty(0);
+  go("dish");
+}
+
+function setSpice(level){
+  spiceLevel = Math.max(0, Math.min(3, level));
+  document.getElementById("spiceThumb").style.left = (spiceLevel / 3) * 100 + "%";
+  document.getElementById("spiceVal").textContent = SPICE_NAMES[spiceLevel] + (spiceLevel === 3 ? " 🔥🔥🔥" : "");
+  buzz("tick");
+  logEvent("spice", { level:spiceLevel });
+}
+
+// Let the spice slider be dragged with the finger.
+(function enableSpiceDrag(){
+  const track = document.getElementById("spiceTrack");
+  let dragging = false;
+  function fromX(clientX){
+    const rect = track.getBoundingClientRect();
+    const pct = Math.min(1, Math.max(0, (clientX - rect.left) / rect.width));
+    setSpice(Math.round(pct * 3));
+  }
+  track.addEventListener("pointerdown", e => { dragging = true; fromX(e.clientX); track.setPointerCapture(e.pointerId); });
+  track.addEventListener("pointermove", e => { if (dragging) fromX(e.clientX); });
+  track.addEventListener("pointerup",   () => dragging = false);
+  track.addEventListener("pointercancel", () => dragging = false);
+})();
+
+function changeQty(delta){
+  quantity = Math.max(1, quantity + delta);
+  document.getElementById("qtyNum").textContent = quantity;
+  if (delta !== 0){ buzz("tick"); logEvent("qty", { qty:quantity }); }
+  const total = chosenDish ? chosenDish.p * quantity : 12;
+  document.getElementById("addLabel").textContent = "Add to Cart · " + total + "€";
+}
+
+function addToCart(){
+  buzz("strong");        // haptic on confirm
+  playChime();           // audio feedback
+  if (session) session.tasks.T3.maxSpice = (spiceLevel === 3);
+  endTask("T3");
+  logEvent("add_to_cart", { dish:chosenDish.n, qty:quantity, spice:spiceLevel });
+
+  const total = chosenDish.p * quantity;
+  document.getElementById("cookLine").textContent = RESTAURANTS[openRestaurant].name + " is cooking";
+  document.getElementById("cItem").textContent   = chosenDish.n + " ×" + quantity;
+  document.getElementById("cItemP").textContent  = total + "€";
+  document.getElementById("cTotal").textContent  = (total + 1.99).toFixed(2) + "€";
+  go("confirm");
+}
+
+
+/* ---------- 7. ORDER CONFIRMED ---------- */
+function toggleRate(){
+  const row = document.getElementById("starsRow");
+  row.style.display = row.style.display === "none" ? "flex" : "none";
+  logEvent("rate_open");
+}
+function rate(v){
+  document.querySelectorAll("#starsRow .s").forEach(s => s.classList.toggle("lit", +s.dataset.v <= v));
+  buzz("soft");
+  if (session) session.ratings.push(v);
+  if (activeTask === "T5") endTask("T5");
+  logEvent("rating", { stars:v });
+  toast("Thanks for rating " + v + "★");
+  // once they've rated, offer a clear way back to the home map
+  document.getElementById("homeAfterRate").style.display = "flex";
+}
+function goTracking(){ beginTask("T4"); go("tracking"); runDelivery(); }
+
+
+/* ---------- 8. LIVE TRACKING -> ARRIVAL ---------- */
+let deliveryStarted = false;
+
+function runDelivery(){
+  if (deliveryStarted) return;
+  deliveryStarted = true;
+
+  const stages = document.querySelectorAll("#tracking .pstage");
+  const fill   = document.getElementById("pfill");
+  const route  = document.getElementById("trackRoute");
+  const rider  = document.getElementById("riderG");
+  const eta     = document.getElementById("etaVal");
+  const routeLen = route.getTotalLength();
+  let step = 2;   // confirmed + cooking already done; begin at "on the way"
+
+  stages[0].classList.add("done");
+  stages[1].classList.add("done");
+
+  // Smoothly glide the rider from one fraction of the route to another.
+  let riderFrac = 0.5;
+  function glideRider(toFrac, ms){
+    const fromFrac = riderFrac;
+    const start = performance.now();
+    function frame(now){
+      const k = Math.min(1, (now - start) / ms);
+      const ease = k < .5 ? 2*k*k : 1 - Math.pow(-2*k+2, 2)/2; // ease-in-out
+      const f = fromFrac + (toFrac - fromFrac) * ease;
+      const pt = route.getPointAtLength(routeLen * f);
+      rider.setAttribute("transform", "translate(" + pt.x + "," + pt.y + ")");
+      if (k < 1) requestAnimationFrame(frame); else riderFrac = toFrac;
+    }
+    requestAnimationFrame(frame);
+  }
+
+  function advance(){
+    if (step < stages.length){
+      stages.forEach((s, i) => { s.classList.toggle("done", i < step); s.classList.toggle("active", i === step); });
+      fill.style.width = (step / (stages.length - 1)) * 100 + "%";
+      glideRider(step === 2 ? 0.5 : 1, 2000);
+      eta.textContent = Math.max(1, (stages.length - 1 - step) * 4) + " min";
+      buzz("tick");
+      logEvent("track_stage", { stage:step });
+      step++;
+      setTimeout(advance, 2400);
+    } else {
+      stages.forEach(s => { s.classList.add("done"); s.classList.remove("active"); });
+      fill.style.width = "100%";
+      glideRider(1, 800);
+      eta.textContent = "Arrived";
+      endTask("T4");
+      setTimeout(() => { beginTask("T5"); arrive(); }, 1200);
+    }
+  }
+  advance();
+}
+function arrive(){ buzz("arrival"); playArrivalSound(); go("arrival"); }
+function finishFlow(){
+  toast("Tap “Rate this order” to finish");
+  go("confirm");
+  document.getElementById("starsRow").style.display = "flex";
+}
+
+
+/* ---------- 9. FEEDBACK HELPERS ---------- */
+// buzz() = the multi-modal "haptic" cue. Real vibration on Android; on iOS
+// (which blocks navigator.vibrate) we also flash the screen, shake the frame,
+// and play a short tick so the cue is still felt/seen/heard.
+const VIBE = { soft:15, tick:[8], double:[20,40,20], strong:[30,50,30], arrival:[80,60,80,60,120] };
+
+function buzz(kind){
+  const pattern = VIBE[kind] || 15;
+  if (navigator.vibrate){ try{ navigator.vibrate(pattern); }catch(e){} }
+
+  const flash = document.getElementById("buzz");
+  flash.classList.remove("go"); void flash.offsetWidth; flash.classList.add("go");
+
+  if (kind === "strong" || kind === "arrival" || kind === "double"){
+    const ph = document.getElementById("phone");
+    ph.classList.remove("shake"); void ph.offsetWidth; ph.classList.add("shake");
+    setTimeout(() => ph.classList.remove("shake"), 420);
+  }
+  playTick(kind);
+  logEvent("haptic", { kind:kind, vibrateAPI: !!navigator.vibrate });
+}
+
+// Small Web Audio helper for the audio feedback.
+let audio = null;
+function audioCtx(){
+  if (!audio){ try{ audio = new (window.AudioContext || window.webkitAudioContext)(); }catch(e){} }
+  if (audio && audio.state === "suspended") audio.resume();
+  return audio;
+}
+function tone(freq, dur, type, vol, delay){
+  const c = audioCtx(); if (!c) return;
+  const osc = c.createOscillator(), gain = c.createGain();
+  osc.type = type || "sine"; osc.frequency.value = freq;
+  osc.connect(gain); gain.connect(c.destination);
+  const t = c.currentTime + (delay || 0);
+  gain.gain.setValueAtTime(0, t);
+  gain.gain.linearRampToValueAtTime(vol || .15, t + .02);
+  gain.gain.exponentialRampToValueAtTime(.0001, t + dur);
+  osc.start(t); osc.stop(t + dur);
+}
+function playTick(kind){
+  if (kind === "soft" || kind === "tick") tone(220, .04, "square", .06, 0);
+  else if (kind === "double"){ tone(300, .05, "square", .08, 0); tone(300, .05, "square", .08, .08); }
+}
+function playChime(){ tone(660, .12, "sine", .18, 0); tone(880, .18, "sine", .16, .1); }
+function playArrivalSound(){ tone(523, .15, "triangle", .2, 0); tone(659, .15, "triangle", .2, .15); tone(784, .3, "triangle", .2, .3); }
+
+// Small toast message.
+let toastTimer = null;
+function toast(msg){
+  const t = document.getElementById("toast");
+  t.textContent = msg; t.classList.add("show");
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove("show"), 2200);
+}
+
+// Live clock in the status bars.
+function tickClock(){
+  const s = new Date().toTimeString().slice(0, 5);
+  document.querySelectorAll(".clk").forEach(e => e.textContent = s);
+}
+setInterval(tickClock, 1000); tickClock();
+
+
+/* ---------- 10. USABILITY LOGGING ---------- */
+// Stores each test session (taps, timings, task completion) in localStorage,
+// then computes descriptive statistics for the report.
+const LOG_KEY = "umamigo_logs_v3";
+let session = null;
+let activeTask = null;
+const TASK_LABELS = {
+  T1:"Find a Japanese restaurant", T2:"Search spicy food by voice",
+  T3:"Order a dish at max spice",  T4:"Track the delivery rider", T5:"Post-delivery action"
+};
+
+function loadAll(){ try{ return JSON.parse(localStorage.getItem(LOG_KEY)) || []; }catch(e){ return []; } }
+function saveAll(a){ try{ localStorage.setItem(LOG_KEY, JSON.stringify(a)); }catch(e){} }
+
+function startSession(){
+  const pid = (document.getElementById("pidInput").value || "").trim() || ("P" + (loadAll().length + 1));
+  session = { pid:pid, started:Date.now(), events:[], tasks:{}, ratings:[] };
+  ["T1","T2","T3","T4","T5"].forEach(t => session.tasks[t] = { started:null, ended:null, taps:0, done:false });
+  logEvent("session_start", { pid:pid });
+  beginTask("T1");
+  go("home");
+  // wait one frame so the home screen is laid out, then place + show the sheet
+  requestAnimationFrame(() => { positionSheet(); setSheet("peek"); });
+  toast("Session started: " + pid);
+}
+function persist(){
+  if (!session) return;
+  const all = loadAll();
+  const i = all.findIndex(s => s.pid === session.pid && s.started === session.started);
+  if (i >= 0) all[i] = session; else all.push(session);
+  saveAll(all);
+}
+function logEvent(type, data){
+  if (!session) return;
+  session.events.push(Object.assign({ t:Date.now() - session.started, type:type }, data || {}));
+  if (type === "tap" && activeTask && session.tasks[activeTask]) session.tasks[activeTask].taps++;
+  persist();
+}
+function beginTask(t){
+  if (!session) return;
+  activeTask = t;
+  if (session.tasks[t].started == null) session.tasks[t].started = Date.now() - session.started;
+  logEvent("task_start", { task:t });
+}
+function endTask(t){
+  if (!session || !session.tasks[t] || session.tasks[t].done) return;
+  session.tasks[t].ended = Date.now() - session.started;
+  session.tasks[t].done = true;
+  logEvent("task_complete", { task:t });
+}
+
+// Count every tap on an interactive element.
+document.addEventListener("click", e => {
+  if (!session) return;
+  const el = e.target.closest("button,.chip,.rcard,.pin,.dishrow,.s,.spice-track,.mic-fab,.mic-big,.searchbar input");
+  if (el) logEvent("tap", { target:(el.id || el.className || "el").toString().slice(0, 40) });
+}, true);
+
+
+/* ---------- 11. STATS PANEL + EXPORT ---------- */
+function openLogs(){ document.getElementById("logPanel").classList.add("show"); renderStats(); }
+function closeLogs(){ document.getElementById("logPanel").classList.remove("show"); }
+function wipeLogs(){ if (confirm("Delete ALL logged sessions?")){ saveAll([]); renderStats(); } }
+
+function mean(a){ return a.length ? a.reduce((x,y) => x + y, 0) / a.length : 0; }
+function sd(a){ if (a.length < 2) return 0; const m = mean(a); return Math.sqrt(mean(a.map(x => (x - m) * (x - m)))); }
+function median(a){ if (!a.length) return 0; const s = [...a].sort((x,y) => x - y), m = Math.floor(s.length/2); return s.length % 2 ? s[m] : (s[m-1] + s[m]) / 2; }
+
+function renderStats(){
+  const all = loadAll();
+  const area = document.getElementById("statsArea");
+  if (!all.length){ area.innerHTML = "<p style='color:#aaa'>No sessions logged yet. Run the app with a participant ID.</p>"; return; }
+
+  const TASKS = ["T1","T2","T3","T4","T5"];
+  const agg = {};
+  TASKS.forEach(t => agg[t] = { times:[], taps:[], done:0 });
+  all.forEach(s => TASKS.forEach(t => {
+    const tk = s.tasks && s.tasks[t]; if (!tk) return;
+    if (tk.done && tk.started != null && tk.ended != null){ agg[t].times.push((tk.ended - tk.started) / 1000); agg[t].done++; }
+    if (typeof tk.taps === "number") agg[t].taps.push(tk.taps);
+  }));
+
+  const n = all.length;
+  const ratings = all.flatMap(s => s.ratings || []);
+  const events  = all.reduce((a,s) => a + (s.events ? s.events.length : 0), 0);
+
+  let html = '<div class="statgrid">' +
+    '<div class="statcard"><div class="k">Participants</div><div class="v">' + n + '</div></div>' +
+    '<div class="statcard"><div class="k">Events logged</div><div class="v">' + events + '</div></div>' +
+    '<div class="statcard"><div class="k">Mean rating</div><div class="v">' + (ratings.length ? mean(ratings).toFixed(1) + "★" : "—") + '</div></div>' +
+    '<div class="statcard"><div class="k">Overall completion</div><div class="v">' + Math.round(mean(TASKS.map(t => agg[t].done / n)) * 100) + '%</div></div>' +
+  '</div><table><tr><th>Task</th><th>Done</th><th>Mean t (s)</th><th>SD</th><th>Median</th><th>Taps</th></tr>';
+  TASKS.forEach(t => {
+    const a = agg[t];
+    html += "<tr><td>" + t + " " + TASK_LABELS[t] + "</td><td>" + a.done + "/" + n + "</td>" +
+      "<td>" + (a.times.length ? mean(a.times).toFixed(1) : "—") + "</td>" +
+      "<td>" + (a.times.length > 1 ? sd(a.times).toFixed(1) : "—") + "</td>" +
+      "<td>" + (a.times.length ? median(a.times).toFixed(1) : "—") + "</td>" +
+      "<td>" + (a.taps.length ? mean(a.taps).toFixed(1) : "—") + "</td></tr>";
+  });
+  html += "</table>";
+
+  html += '<h2 style="font-size:16px;margin:22px 0 6px">Sessions</h2><table><tr><th>PID</th><th>Done</th><th>Events</th><th>Rating</th><th>Date</th></tr>';
+  all.forEach(s => {
+    const done = TASKS.filter(t => s.tasks && s.tasks[t] && s.tasks[t].done).length;
+    html += "<tr><td>" + s.pid + "</td><td>" + done + "/5</td><td>" + (s.events ? s.events.length : 0) + "</td>" +
+      "<td>" + (s.ratings && s.ratings.length ? s.ratings[s.ratings.length-1] + "★" : "—") + "</td>" +
+      "<td>" + new Date(s.started).toLocaleString() + "</td></tr>";
+  });
+  html += "</table>";
+  area.innerHTML = html;
+}
+
+function summaryText(){
+  const all = loadAll(), TASKS = ["T1","T2","T3","T4","T5"];
+  let out = "UmamiGo usability test — " + all.length + " participants\n\nTask\tCompletion\tMean time (s)\tSD\tMedian\tMean taps\n";
+  TASKS.forEach(t => {
+    const times = [], taps = []; let done = 0;
+    all.forEach(s => { const tk = s.tasks && s.tasks[t]; if (tk && tk.done && tk.started != null){ times.push((tk.ended - tk.started)/1000); done++; } if (tk) taps.push(tk.taps); });
+    out += t + " " + TASK_LABELS[t] + "\t" + done + "/" + all.length + "\t" +
+      (times.length ? mean(times).toFixed(1) : "-") + "\t" + (times.length > 1 ? sd(times).toFixed(1) : "-") + "\t" +
+      (times.length ? median(times).toFixed(1) : "-") + "\t" + (taps.length ? mean(taps).toFixed(1) : "-") + "\n";
+  });
+  const r = all.flatMap(s => s.ratings || []);
+  out += "\nMean rating: " + (r.length ? mean(r).toFixed(2) : "-") + " (n=" + r.length + ")\n";
+  return out;
+}
+function copyStats(){ navigator.clipboard.writeText(summaryText()).then(() => toast("Summary copied")); }
+function downloadJSON(){ download(new Blob([JSON.stringify(loadAll(), null, 2)], { type:"application/json" }), "umamigo_logs.json"); }
+function downloadCSV(){
+  const all = loadAll();
+  const rows = [["pid","event_ms","type","detail"]];
+  all.forEach(s => (s.events || []).forEach(e => {
+    const extra = Object.assign({}, e); delete extra.t; delete extra.type;
+    rows.push([s.pid, e.t, e.type, JSON.stringify(extra).replace(/"/g, "'")]);
+  }));
+  download(new Blob([rows.map(r => r.map(c => '"' + c + '"').join(",")).join("\n")], { type:"text/csv" }), "umamigo_events.csv");
+}
+function download(blob, name){
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url; a.download = name; a.click();
+  URL.revokeObjectURL(url);
+  toast("Downloaded " + name);
+}
+
+
+/* ---------- 12. START UP ---------- */
+buildChips();
+buildPins();
+renderList();
+positionSheet();
+// keep the sheet's top aligned below the chips if the window resizes / rotates
+window.addEventListener("resize", () => { positionSheet(); setSheet(sheetState); });
+// Unlock audio on the first tap (browsers require a user gesture for sound).
+document.addEventListener("pointerdown", function unlock(){ audioCtx(); document.removeEventListener("pointerdown", unlock); }, { once:true });
+// Register a tiny service worker so it installs as a PWA.
+if ("serviceWorker" in navigator){
+  const sw = "self.addEventListener('install',e=>self.skipWaiting());self.addEventListener('activate',e=>self.clients.claim());self.addEventListener('fetch',e=>{});";
+  try{ navigator.serviceWorker.register(URL.createObjectURL(new Blob([sw], { type:"text/javascript" }))).catch(() => {}); }catch(e){}
+}
+</script>
+</body>
+</html>

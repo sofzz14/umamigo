@@ -44,7 +44,9 @@ HTML · CSS · JavaScript (no build step) · Web Speech API · Geolocation · Vi
 
 ## Project files
 
-- `index.html` — the complete application (single file)
+- `index.html` — the complete application structure
+- `style.css` — the application styling
+- `app.js` — the application functionality
 - `README.md` — this file
 
 ## Notes
